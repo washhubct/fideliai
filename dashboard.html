@@ -316,6 +316,7 @@
                                             <th>Livello</th>
                                             <th>Ultima visita</th>
                                             <th>Visite</th>
+                                            <th>QR</th>
                                         </tr>
                                     </thead>
                                     <tbody id="customers-tbody">
@@ -644,6 +645,28 @@
             </div>
         </div>
     </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal-overlay" id="qr-modal">
+        <div class="modal" style="max-width:400px">
+            <div class="modal-header">
+                <h3>QR Code cliente</h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align:center">
+                <p id="qr-customer-name" style="font-weight:600;margin-bottom:16px;font-size:16px"></p>
+                <div id="qr-canvas" style="display:inline-block;padding:16px;background:#fff;border-radius:12px;border:1px solid var(--gray-200)"></div>
+                <p id="qr-link-text" style="margin-top:16px;font-size:12px;color:var(--gray-400);word-break:break-all"></p>
+            </div>
+            <div class="modal-footer" style="justify-content:center">
+                <button class="btn btn-primary btn-sm" id="qr-copy-link">Copia link</button>
+                <button class="btn btn-ghost btn-sm" onclick="this.closest('.modal-overlay').classList.remove('active')">Chiudi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>

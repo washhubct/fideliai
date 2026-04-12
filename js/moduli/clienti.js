@@ -6,6 +6,7 @@ import { showToast, formatDate, formatNumber, debounce } from '../utils.js';
 export function initClienti() {
     loadCustomers();
     setupClientiForms();
+    setupQrModal();
 }
 
 async function loadCustomers(filter = 'all') {
@@ -38,7 +39,7 @@ function renderCustomers(customers) {
     if (!tbody) return;
 
     if (customers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding:40px;color:var(--gray-400)">Nessun cliente trovato</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--gray-400)">Nessun cliente trovato</td></tr>';
         return;
     }
 
@@ -52,6 +53,7 @@ function renderCustomers(customers) {
                 <td><span class="badge badge-${level === 'Gold' || level === 'Platinum' ? 'warning' : 'info'}">${level}</span></td>
                 <td>${formatDate(c.lastVisit)}</td>
                 <td>${c.visits || 0}</td>
+                <td><button class="btn btn-ghost btn-sm btn-qr" data-id="${c.id}" data-name="${c.name}" title="Mostra QR Code" style="font-size:18px;padding:4px 8px">📱</button></td>
             </tr>
         `;
     }).join('');
@@ -145,4 +147,77 @@ async function addCustomer(e) {
 
 function closeModal(id) {
     document.getElementById(id)?.classList.remove('active');
+}
+
+// ---- QR Code ----
+
+// Genera l'URL della card per il cliente
+function getCardUrl(customerId) {
+    const base = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+    return `${base}card.html?m=${state.merchantId}&c=${customerId}`;
+}
+
+// Mostra il modal QR con il codice del cliente
+function showQrModal(customerId, customerName) {
+    const modal = document.getElementById('qr-modal');
+    const canvas = document.getElementById('qr-canvas');
+    const nameEl = document.getElementById('qr-customer-name');
+    const linkEl = document.getElementById('qr-link-text');
+
+    if (!modal || !canvas) return;
+
+    const url = getCardUrl(customerId);
+
+    // Imposta nome e link visibili
+    nameEl.textContent = customerName;
+    linkEl.textContent = url;
+
+    // Pulisci il contenitore e genera il QR
+    canvas.innerHTML = '';
+    new QRCode(canvas, {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark: '#1a1a2e',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+
+    modal.classList.add('active');
+}
+
+// Setup listener delegato per i pulsanti QR e pulsante copia link
+function setupQrModal() {
+    // Delegated click sui pulsanti QR nella tabella
+    const tbody = document.getElementById('customers-tbody');
+    if (tbody) {
+        tbody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-qr');
+            if (!btn) return;
+            const customerId = btn.dataset.id;
+            const customerName = btn.dataset.name;
+            showQrModal(customerId, customerName);
+        });
+    }
+
+    // Pulsante "Copia link"
+    const copyBtn = document.getElementById('qr-copy-link');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            const linkText = document.getElementById('qr-link-text')?.textContent;
+            if (!linkText) return;
+            navigator.clipboard.writeText(linkText).then(() => {
+                showToast('Link copiato!');
+            }).catch(() => {
+                // Fallback per browser senza clipboard API
+                const tmp = document.createElement('textarea');
+                tmp.value = linkText;
+                document.body.appendChild(tmp);
+                tmp.select();
+                document.execCommand('copy');
+                document.body.removeChild(tmp);
+                showToast('Link copiato!');
+            });
+        });
+    }
 }
