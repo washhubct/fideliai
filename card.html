@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FideliAI — La tua card fedeltà</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1E1B4B">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>">
+</head>
+<body>
+
+    <div class="card-app">
+        <div class="card-container">
+
+            <!-- Header -->
+            <div class="card-header">
+                <p class="card-merchant" id="card-merchant-name">FideliAI</p>
+                <h1>La tua Card Fedeltà</h1>
+            </div>
+
+            <!-- Loyalty Card -->
+            <div class="loyalty-card">
+                <div class="card-customer-name" id="card-customer-name">Ospite</div>
+                <div class="card-level" id="card-level">Bronze</div>
+
+                <div class="card-points-display">
+                    <div class="card-points-value" id="card-points">0</div>
+                    <div class="card-points-label">punti fedeltà</div>
+                </div>
+
+                <div class="card-progress">
+                    <div class="card-progress-fill" id="card-progress-fill" style="width:0%"></div>
+                </div>
+                <div class="card-progress-text" id="card-progress-text">0 / 500 punti per Silver</div>
+            </div>
+
+            <!-- Premi disponibili -->
+            <div class="card-section">
+                <h3>🎁 Premi disponibili</h3>
+                <div id="card-rewards">
+                    <div class="reward-item">
+                        <div class="reward-info">
+                            <h4>Caffè omaggio</h4>
+                            <p>100 punti</p>
+                        </div>
+                        <button class="reward-btn locked">100 pts</button>
+                    </div>
+                    <div class="reward-item">
+                        <div class="reward-info">
+                            <h4>Sconto 10%</h4>
+                            <p>500 punti</p>
+                        </div>
+                        <button class="reward-btn locked">500 pts</button>
+                    </div>
+                    <div class="reward-item">
+                        <div class="reward-info">
+                            <h4>Prodotto gratis</h4>
+                            <p>1.000 punti</p>
+                        </div>
+                        <button class="reward-btn locked">1000 pts</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storico transazioni -->
+            <div class="card-section">
+                <h3>📋 Ultime transazioni</h3>
+                <div id="card-transactions">
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <h4>Nessuna transazione</h4>
+                            <p>Le tue transazioni appariranno qui</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Powered by -->
+            <div style="text-align:center;padding:24px 0;opacity:0.4">
+                <p style="font-size:12px;color:white">Powered by FideliAI</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "fideliai-app.firebaseapp.com",
+            projectId: "fideliai-app",
+            storageBucket: "fideliai-app.appspot.com",
+            messagingSenderId: "000000000000",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Parse URL params: card.html?m=MERCHANT_ID&c=CUSTOMER_ID
+        const params = new URLSearchParams(window.location.search);
+        const merchantId = params.get('m');
+        const customerId = params.get('c');
+        const isDemo = params.get('demo') === 'true';
+
+        async function loadCard() {
+            if (isDemo) {
+                renderDemo();
+                return;
+            }
+
+            if (!merchantId || !customerId) {
+                document.querySelector('.card-customer-name').textContent = 'Link non valido';
+                return;
+            }
+
+            // Load merchant info
+            const merchantDoc = await db.collection('merchants').doc(merchantId).get();
+            if (merchantDoc.exists) {
+                const m = merchantDoc.data();
+                document.getElementById('card-merchant-name').textContent = m.businessName || 'FideliAI';
+            }
+
+            // Load customer
+            const customerDoc = await db.collection(`merchants/${merchantId}/customers`).doc(customerId).get();
+            if (!customerDoc.exists) {
+                document.querySelector('.card-customer-name').textContent = 'Cliente non trovato';
+                return;
+            }
+
+            const customer = customerDoc.data();
+            const points = customer.totalPoints || 0;
+
+            document.getElementById('card-customer-name').textContent = customer.name;
+            document.getElementById('card-points').textContent = points.toLocaleString('it-IT');
+
+            // Level
+            const level = getLevel(points);
+            document.getElementById('card-level').textContent = level.name;
+
+            // Progress
+            const progress = level.next
+                ? Math.min(100, (points / level.next) * 100)
+                : 100;
+            document.getElementById('card-progress-fill').style.width = progress + '%';
+            document.getElementById('card-progress-text').textContent = level.next
+                ? `${points.toLocaleString('it-IT')} / ${level.next.toLocaleString('it-IT')} punti per ${level.nextName}`
+                : 'Livello massimo raggiunto!';
+
+            // Load rewards
+            const rewardsSnap = await db.collection(`merchants/${merchantId}/rewards`)
+                .where('active', '==', true)
+                .orderBy('pointsCost')
+                .get();
+
+            if (!rewardsSnap.empty) {
+                const container = document.getElementById('card-rewards');
+                container.innerHTML = '';
+                rewardsSnap.forEach(doc => {
+                    const r = doc.data();
+                    const canRedeem = points >= r.pointsCost;
+                    container.innerHTML += `
+                        <div class="reward-item">
+                            <div class="reward-info">
+                                <h4>${r.name}</h4>
+                                <p>${r.pointsCost.toLocaleString('it-IT')} punti</p>
+                            </div>
+                            <button class="reward-btn ${canRedeem ? 'available' : 'locked'}">
+                                ${canRedeem ? 'Riscatta' : r.pointsCost + ' pts'}
+                            </button>
+                        </div>
+                    `;
+                });
+            }
+
+            // Load transactions
+            const transSnap = await db.collection(`merchants/${merchantId}/transactions`)
+                .where('customerId', '==', customerId)
+                .orderBy('createdAt', 'desc')
+                .limit(10)
+                .get();
+
+            if (!transSnap.empty) {
+                const container = document.getElementById('card-transactions');
+                container.innerHTML = '';
+                transSnap.forEach(doc => {
+                    const t = doc.data();
+                    const date = t.createdAt ? t.createdAt.toDate().toLocaleDateString('it-IT') : '';
+                    container.innerHTML += `
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <h4>${t.type === 'earn' ? 'Acquisto' : 'Riscatto premio'}</h4>
+                                <p>${date}</p>
+                            </div>
+                            <span class="transaction-points">${t.type === 'earn' ? '+' : '-'}${t.points}</span>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function getLevel(points) {
+            const levels = [
+                { name: 'Bronze', min: 0, next: 500, nextName: 'Silver' },
+                { name: 'Silver', min: 500, next: 1500, nextName: 'Gold' },
+                { name: 'Gold', min: 1500, next: 5000, nextName: 'Platinum' },
+                { name: 'Platinum', min: 5000, next: null, nextName: null }
+            ];
+            let current = levels[0];
+            for (const lvl of levels) {
+                if (points >= lvl.min) current = lvl;
+            }
+            return current;
+        }
+
+        function renderDemo() {
+            document.getElementById('card-merchant-name').textContent = 'Bar Roma';
+            document.getElementById('card-customer-name').textContent = 'Marco Rossi';
+            document.getElementById('card-points').textContent = '1.250';
+            document.getElementById('card-level').textContent = 'Silver ⭐';
+            document.getElementById('card-progress-fill').style.width = '83%';
+            document.getElementById('card-progress-text').textContent = '1.250 / 1.500 punti per Gold';
+
+            document.getElementById('card-rewards').innerHTML = `
+                <div class="reward-item">
+                    <div class="reward-info"><h4>Caffè omaggio</h4><p>100 punti</p></div>
+                    <button class="reward-btn available">Riscatta</button>
+                </div>
+                <div class="reward-item">
+                    <div class="reward-info"><h4>Sconto 10%</h4><p>500 punti</p></div>
+                    <button class="reward-btn available">Riscatta</button>
+                </div>
+                <div class="reward-item">
+                    <div class="reward-info"><h4>Prodotto gratis</h4><p>1.000 punti</p></div>
+                    <button class="reward-btn available">Riscatta</button>
+                </div>
+            `;
+
+            document.getElementById('card-transactions').innerHTML = `
+                <div class="transaction-item">
+                    <div class="transaction-info"><h4>Acquisto</h4><p>12/04/2026</p></div>
+                    <span class="transaction-points">+25</span>
+                </div>
+                <div class="transaction-item">
+                    <div class="transaction-info"><h4>Acquisto</h4><p>10/04/2026</p></div>
+                    <span class="transaction-points">+18</span>
+                </div>
+                <div class="transaction-item">
+                    <div class="transaction-info"><h4>Riscatto premio</h4><p>08/04/2026</p></div>
+                    <span class="transaction-points">-100</span>
+                </div>
+                <div class="transaction-item">
+                    <div class="transaction-info"><h4>Acquisto</h4><p>05/04/2026</p></div>
+                    <span class="transaction-points">+32</span>
+                </div>
+            `;
+        }
+
+        loadCard();
+    </script>
+
+</body>
+</html>

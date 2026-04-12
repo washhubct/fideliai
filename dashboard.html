@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FideliAI — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>">
+</head>
+<body>
+
+    <!-- ============ AUTH SECTION ============ -->
+    <div id="auth-section">
+        <div class="auth-container">
+            <!-- Login -->
+            <div id="login-section">
+                <div class="auth-card">
+                    <div class="nav-logo" style="justify-content:center;color:var(--dark);margin-bottom:32px">
+                        <div class="logo-icon">💎</div>
+                        FideliAI
+                    </div>
+                    <h2>Bentornato</h2>
+                    <p class="auth-subtitle">Accedi alla tua dashboard</p>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="login-email" class="form-control" placeholder="tu@azienda.it" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">Accedi</button>
+                    </form>
+                    <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--gray-500)">
+                        Non hai un account? <a href="#" id="show-register" style="color:var(--primary);font-weight:600">Registrati gratis</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Register -->
+            <div id="register-section" class="hidden">
+                <div class="auth-card">
+                    <div class="nav-logo" style="justify-content:center;color:var(--dark);margin-bottom:32px">
+                        <div class="logo-icon">💎</div>
+                        FideliAI
+                    </div>
+                    <h2>Crea il tuo account</h2>
+                    <p class="auth-subtitle">14 giorni di prova gratuita</p>
+                    <form id="register-form">
+                        <div class="form-group">
+                            <label>Nome attività</label>
+                            <input type="text" id="reg-business" class="form-control" placeholder="Es. Bar Roma" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Categoria</label>
+                            <select id="reg-category" class="form-control" required>
+                                <option value="">Seleziona...</option>
+                                <option value="bar-caffetteria">Bar / Caffetteria</option>
+                                <option value="ristorante">Ristorante</option>
+                                <option value="negozio-abbigliamento">Negozio Abbigliamento</option>
+                                <option value="parrucchiere">Parrucchiere / Estetica</option>
+                                <option value="palestra">Palestra / Centro sportivo</option>
+                                <option value="farmacia">Farmacia / Erboristeria</option>
+                                <option value="alimentari">Alimentari / Gastronomia</option>
+                                <option value="altro">Altro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="reg-email" class="form-control" placeholder="tu@azienda.it" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="reg-password" class="form-control" placeholder="Minimo 6 caratteri" required minlength="6">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">Crea account</button>
+                    </form>
+                    <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--gray-500)">
+                        Hai già un account? <a href="#" id="show-login" style="color:var(--primary);font-weight:600">Accedi</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ DASHBOARD SECTION ============ -->
+    <div id="dashboard-section" class="hidden">
+        <div class="dashboard-layout">
+
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-logo">
+                    <div class="logo-icon">💎</div>
+                    FideliAI
+                </div>
+                <nav class="sidebar-nav">
+                    <div class="nav-section-title">Principale</div>
+                    <button class="nav-item active" data-module="home">
+                        <span class="nav-icon">🏠</span> Dashboard
+                    </button>
+                    <button class="nav-item" data-module="loyalty">
+                        <span class="nav-icon">⭐</span> Loyalty Engine
+                    </button>
+                    <button class="nav-item" data-module="clienti">
+                        <span class="nav-icon">👥</span> Clienti / CRM
+                    </button>
+
+                    <div class="nav-section-title">Marketing</div>
+                    <button class="nav-item" data-module="campagne">
+                        <span class="nav-icon">📣</span> Campagne
+                    </button>
+                    <button class="nav-item" data-module="analytics">
+                        <span class="nav-icon">📊</span> Analytics
+                    </button>
+
+                    <div class="nav-section-title">Avanzato</div>
+                    <button class="nav-item" data-module="ai-agent">
+                        <span class="nav-icon">🤖</span> AI Agent
+                    </button>
+                    <button class="nav-item" data-module="impostazioni">
+                        <span class="nav-icon">⚙️</span> Impostazioni
+                    </button>
+                </nav>
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <div class="sidebar-user-avatar" id="merchant-avatar">M</div>
+                        <div class="sidebar-user-info">
+                            <h4 id="merchant-name">La tua attività</h4>
+                            <p id="merchant-plan">Starter</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+
+                <!-- Topbar -->
+                <div class="topbar">
+                    <div style="display:flex;align-items:center;gap:12px">
+                        <button class="btn btn-icon btn-ghost" id="menu-toggle" style="display:none">☰</button>
+                        <h1 id="top-title">Dashboard</h1>
+                    </div>
+                    <div class="topbar-actions">
+                        <button class="btn btn-primary" id="btn-add-transaction" onclick="document.getElementById('transaction-modal').classList.add('active')">
+                            + Nuova transazione
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ===== MODULE: HOME ===== -->
+                <div class="module-section active" id="module-home">
+                    <div class="kpi-grid">
+                        <div class="kpi-card" id="kpi-customers">
+                            <div class="kpi-header">
+                                <span class="kpi-label">Clienti totali</span>
+                                <div class="kpi-icon blue">👥</div>
+                            </div>
+                            <div class="kpi-value">0</div>
+                            <span class="kpi-change positive">—</span>
+                        </div>
+                        <div class="kpi-card" id="kpi-transactions">
+                            <div class="kpi-header">
+                                <span class="kpi-label">Transazioni oggi</span>
+                                <div class="kpi-icon green">💳</div>
+                            </div>
+                            <div class="kpi-value">0</div>
+                            <span class="kpi-change positive">—</span>
+                        </div>
+                        <div class="kpi-card" id="kpi-points">
+                            <div class="kpi-header">
+                                <span class="kpi-label">Punti erogati oggi</span>
+                                <div class="kpi-icon purple">⭐</div>
+                            </div>
+                            <div class="kpi-value">0</div>
+                            <span class="kpi-change positive">—</span>
+                        </div>
+                        <div class="kpi-card" id="kpi-rewards">
+                            <div class="kpi-header">
+                                <span class="kpi-label">Premi riscattati</span>
+                                <div class="kpi-icon amber">🎁</div>
+                            </div>
+                            <div class="kpi-value">0</div>
+                            <span class="kpi-change positive">—</span>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>Transazioni recenti</h3>
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Cliente</th>
+                                            <th>Tipo</th>
+                                            <th>Importo</th>
+                                            <th>Punti</th>
+                                            <th>Data</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recent-transactions">
+                                        <tr><td colspan="5" class="text-center" style="padding:40px;color:var(--gray-400)">Nessuna transazione ancora</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== MODULE: LOYALTY ===== -->
+                <div class="module-section" id="module-loyalty">
+                    <div class="config-grid">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Configurazione punti</h3>
+                            </div>
+                            <div class="panel-body">
+                                <form id="loyalty-config-form">
+                                    <div class="form-group">
+                                        <label>Punti per ogni € speso</label>
+                                        <input type="number" id="points-per-euro" class="form-control" value="1" min="1" max="100">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Salva configurazione</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Livelli fedeltà</h3>
+                            </div>
+                            <div class="panel-body" id="loyalty-levels">
+                                <div class="stat-bar">
+                                    <span class="stat-bar-label">Bronze</span>
+                                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width:0%;background:var(--gradient)"></div></div>
+                                    <span class="stat-bar-value">0 pts</span>
+                                </div>
+                                <div class="stat-bar">
+                                    <span class="stat-bar-label">Silver</span>
+                                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width:10%;background:var(--gradient)"></div></div>
+                                    <span class="stat-bar-value">500 pts</span>
+                                </div>
+                                <div class="stat-bar">
+                                    <span class="stat-bar-label">Gold</span>
+                                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width:30%;background:var(--gradient)"></div></div>
+                                    <span class="stat-bar-value">1.500 pts</span>
+                                </div>
+                                <div class="stat-bar">
+                                    <span class="stat-bar-label">Platinum</span>
+                                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width:100%;background:var(--gradient)"></div></div>
+                                    <span class="stat-bar-value">5.000 pts</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel mt-24">
+                        <div class="panel-header">
+                            <h3>Catalogo premi</h3>
+                            <button class="btn btn-primary btn-sm" onclick="document.getElementById('reward-modal').classList.add('active')">+ Aggiungi premio</button>
+                        </div>
+                        <div class="panel-body" id="rewards-list">
+                            <div class="empty-state">
+                                <div class="empty-icon">🎁</div>
+                                <h3>Nessun premio configurato</h3>
+                                <p>Crea il tuo primo premio per incentivare i clienti</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== MODULE: CLIENTI ===== -->
+                <div class="module-section" id="module-clienti">
+                    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Totali</span>
+                            <div class="kpi-value" id="seg-total">0</div>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Attivi (30gg)</span>
+                            <div class="kpi-value" id="seg-active">0</div>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">VIP</span>
+                            <div class="kpi-value" id="seg-vip">0</div>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Inattivi</span>
+                            <div class="kpi-value" id="seg-inactive">0</div>
+                        </div>
+                    </div>
+
+                    <div class="panel">
+                        <div class="panel-header">
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="text" id="customer-search" class="form-control" placeholder="Cerca cliente..." style="width:260px">
+                                <button class="btn btn-ghost btn-sm active" data-filter="all">Tutti</button>
+                                <button class="btn btn-ghost btn-sm" data-filter="vip">VIP</button>
+                                <button class="btn btn-ghost btn-sm" data-filter="inactive">Inattivi</button>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="document.getElementById('customer-modal').classList.add('active')">+ Aggiungi cliente</button>
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>Contatto</th>
+                                            <th>Punti</th>
+                                            <th>Livello</th>
+                                            <th>Ultima visita</th>
+                                            <th>Visite</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="customers-tbody">
+                                        <tr><td colspan="6" class="text-center" style="padding:40px;color:var(--gray-400)">Nessun cliente trovato</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== MODULE: CAMPAGNE ===== -->
+                <div class="module-section" id="module-campagne">
+                    <div class="flex-between mb-24">
+                        <div></div>
+                        <button class="btn btn-primary" onclick="document.getElementById('campaign-modal').classList.add('active')">+ Nuova campagna</button>
+                    </div>
+                    <div id="campaigns-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📣</div>
+                            <h3>Nessuna campagna</h3>
+                            <p>Crea la tua prima campagna per raggiungere i clienti</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== MODULE: ANALYTICS ===== -->
+                <div class="module-section" id="module-analytics">
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <span class="kpi-label">Revenue totale</span>
+                            <div class="kpi-value" id="analytics-revenue">€0</div>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Scontrino medio</span>
+                            <div class="kpi-value" id="analytics-avg">€0</div>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Punti erogati</span>
+                            <div class="kpi-value" id="analytics-points">0</div>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">Clienti unici</span>
+                            <div class="kpi-value" id="analytics-unique">0</div>
+                        </div>
+                    </div>
+
+                    <div class="config-grid">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Transazioni ultimi 7 giorni</h3>
+                            </div>
+                            <div class="panel-body" id="weekly-chart">
+                                <div class="chart-placeholder">Caricamento dati...</div>
+                            </div>
+                        </div>
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Retention rate</h3>
+                            </div>
+                            <div class="panel-body">
+                                <div style="text-align:center;margin-bottom:20px">
+                                    <span style="font-size:48px;font-weight:800;color:var(--primary)" id="analytics-retention">0%</span>
+                                    <p style="color:var(--gray-500);font-size:14px">dei clienti torna almeno 2 volte</p>
+                                </div>
+                                <div class="stat-bar-track" style="height:12px">
+                                    <div class="stat-bar-fill" id="retention-bar" style="width:0%;background:var(--gradient);height:12px"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel mt-24">
+                        <div class="panel-header">
+                            <h3>Top clienti per punti</h3>
+                        </div>
+                        <div class="panel-body" id="top-clients">
+                            <p style="color:var(--gray-400);text-align:center;padding:20px">Nessun dato</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== MODULE: AI AGENT ===== -->
+                <div class="module-section" id="module-ai-agent">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>🤖 AI Agent — Suggerimenti</h3>
+                            <span class="badge badge-primary">Business Plan</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="ai-chat" id="ai-insights">
+                                <div class="ai-message">
+                                    <div class="ai-avatar">🤖</div>
+                                    <div class="ai-bubble">
+                                        <strong>👋 Ciao!</strong><br>
+                                        Sono il tuo AI Agent. Analizzo i dati del tuo negozio e ti suggerisco azioni concrete per fidelizzare i clienti.
+                                    </div>
+                                </div>
+                            </div>
+                            <form id="ai-chat-form" class="ai-input-bar">
+                                <input type="text" id="ai-chat-input" class="form-control" placeholder="Chiedi qualcosa all'AI Agent...">
+                                <button type="submit" class="btn btn-primary">Invia</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== MODULE: IMPOSTAZIONI ===== -->
+                <div class="module-section" id="module-impostazioni">
+                    <div class="config-grid">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <h3>Profilo attività</h3>
+                            </div>
+                            <div class="panel-body">
+                                <form id="settings-form">
+                                    <div class="form-group">
+                                        <label>Nome attività</label>
+                                        <input type="text" id="set-business-name" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" id="set-email" class="form-control" disabled>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Categoria</label>
+                                        <select id="set-category" class="form-control">
+                                            <option value="bar-caffetteria">Bar / Caffetteria</option>
+                                            <option value="ristorante">Ristorante</option>
+                                            <option value="negozio-abbigliamento">Negozio Abbigliamento</option>
+                                            <option value="parrucchiere">Parrucchiere / Estetica</option>
+                                            <option value="palestra">Palestra / Centro sportivo</option>
+                                            <option value="farmacia">Farmacia / Erboristeria</option>
+                                            <option value="alimentari">Alimentari / Gastronomia</option>
+                                            <option value="altro">Altro</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Telefono</label>
+                                        <input type="tel" id="set-phone" class="form-control" placeholder="+39...">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Indirizzo</label>
+                                        <input type="text" id="set-address" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Sito web</label>
+                                        <input type="url" id="set-website" class="form-control" placeholder="https://...">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Salva modifiche</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="panel">
+                                <div class="panel-header">
+                                    <h3>Piano attivo</h3>
+                                </div>
+                                <div class="panel-body" id="current-plan">
+                                    <span class="badge badge-info" style="font-size:16px;padding:8px 20px">Starter — €19/mese</span>
+                                </div>
+                            </div>
+                            <div class="panel">
+                                <div class="panel-header">
+                                    <h3>Sicurezza</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <form id="password-form">
+                                        <div class="form-group">
+                                            <label>Nuova password</label>
+                                            <input type="password" id="new-password" class="form-control" minlength="6">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Conferma password</label>
+                                            <input type="password" id="confirm-password" class="form-control" minlength="6">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm">Cambia password</button>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="panel">
+                                <div class="panel-body text-center">
+                                    <button class="btn btn-ghost" id="btn-logout" style="color:var(--danger)">Esci dall'account</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ============ MODALS ============ -->
+
+    <!-- Transaction Modal -->
+    <div class="modal-overlay" id="transaction-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Nuova transazione</h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="transaction-form">
+                    <div class="form-group">
+                        <label>Cliente</label>
+                        <select id="trans-customer" class="form-control" required>
+                            <option value="">Seleziona cliente...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Importo (€)</label>
+                        <input type="number" id="trans-amount" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <textarea id="trans-notes" class="form-control" rows="2" placeholder="Opzionale..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').classList.remove('active')">Annulla</button>
+                <button class="btn btn-primary" type="submit" form="transaction-form">Registra</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reward Modal -->
+    <div class="modal-overlay" id="reward-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Nuovo premio</h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="reward-form">
+                    <div class="form-group">
+                        <label>Nome premio</label>
+                        <input type="text" id="reward-name" class="form-control" placeholder="Es. Caffè omaggio" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Punti necessari</label>
+                        <input type="number" id="reward-points" class="form-control" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descrizione</label>
+                        <textarea id="reward-desc" class="form-control" rows="2" placeholder="Opzionale..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').classList.remove('active')">Annulla</button>
+                <button class="btn btn-primary" type="submit" form="reward-form">Aggiungi premio</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Modal -->
+    <div class="modal-overlay" id="customer-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Nuovo cliente</h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-customer-form">
+                    <div class="form-group">
+                        <label>Nome e cognome</label>
+                        <input type="text" id="cust-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="cust-email" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefono</label>
+                        <input type="tel" id="cust-phone" class="form-control">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').classList.remove('active')">Annulla</button>
+                <button class="btn btn-primary" type="submit" form="add-customer-form">Aggiungi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Campaign Modal -->
+    <div class="modal-overlay" id="campaign-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Nuova campagna</h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('active')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="campaign-form">
+                    <div class="form-group">
+                        <label>Nome campagna</label>
+                        <input type="text" id="camp-name" class="form-control" placeholder="Es. Weekend punti doppi" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Canale</label>
+                        <select id="camp-channel" class="form-control" required>
+                            <option value="push">Push notification</option>
+                            <option value="sms">SMS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Target</label>
+                        <select id="camp-segment" class="form-control" required>
+                            <option value="all">Tutti i clienti</option>
+                            <option value="vip">Solo VIP (Gold+)</option>
+                            <option value="inactive">Clienti inattivi (30gg+)</option>
+                            <option value="new">Nuovi clienti</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Messaggio</label>
+                        <textarea id="camp-message" class="form-control" rows="3" required placeholder="Scrivi il messaggio della campagna..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').classList.remove('active')">Annulla</button>
+                <button class="btn btn-primary" type="submit" form="campaign-form">Crea campagna</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script type="module">
+        import { initAuth, logout } from './js/moduli/auth.js';
+        import { initNavigazione, navigateTo } from './js/moduli/navigazione.js';
+        import { initHome } from './js/moduli/home.js';
+        import { initLoyalty } from './js/moduli/loyalty.js';
+        import { initClienti } from './js/moduli/clienti.js';
+        import { initCampagne } from './js/moduli/campagne.js';
+        import { initAnalytics } from './js/moduli/analytics.js';
+        import { initAiAgent } from './js/moduli/ai-agent.js';
+        import { initImpostazioni } from './js/moduli/impostazioni.js';
+
+        // Init auth first, then modules
+        initAuth();
+        initNavigazione();
+
+        // Init modules on navigation
+        window.addEventListener('module-change', (e) => {
+            const mod = e.detail.module;
+            switch(mod) {
+                case 'home': initHome(); break;
+                case 'loyalty': initLoyalty(); break;
+                case 'clienti': initClienti(); break;
+                case 'campagne': initCampagne(); break;
+                case 'analytics': initAnalytics(); break;
+                case 'ai-agent': initAiAgent(); break;
+                case 'impostazioni': initImpostazioni(); break;
+            }
+        });
+
+        // Init home on dashboard load
+        const observer = new MutationObserver(() => {
+            const dash = document.getElementById('dashboard-section');
+            if (dash && !dash.classList.contains('hidden')) {
+                initHome();
+                observer.disconnect();
+            }
+        });
+        observer.observe(document.getElementById('dashboard-section'), { attributes: true });
+
+        // Mobile menu visibility
+        const mq = window.matchMedia('(max-width: 768px)');
+        mq.addEventListener('change', (e) => {
+            document.getElementById('menu-toggle').style.display = e.matches ? 'flex' : 'none';
+        });
+        if (mq.matches) document.getElementById('menu-toggle').style.display = 'flex';
+    </script>
+
+</body>
+</html>

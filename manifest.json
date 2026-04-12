@@ -1,0 +1,16 @@
+{
+    "name": "FideliAI — Card Fedeltà",
+    "short_name": "FideliAI",
+    "description": "La tua card fedeltà digitale",
+    "start_url": "/card.html",
+    "display": "standalone",
+    "background_color": "#1E1B4B",
+    "theme_color": "#6366F1",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        }
+    ]
+}
