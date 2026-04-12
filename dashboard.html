@@ -660,6 +660,7 @@
         import { initAnalytics } from './js/moduli/analytics.js';
         import { initAiAgent } from './js/moduli/ai-agent.js';
         import { initImpostazioni } from './js/moduli/impostazioni.js';
+        import { initTransazioni, refreshCustomerDropdown } from './js/moduli/transazioni.js';
 
         // Init auth first, then modules
         initAuth();
@@ -679,15 +680,21 @@
             }
         });
 
-        // Init home on dashboard load
+        // Init home + transactions on dashboard load
         const observer = new MutationObserver(() => {
             const dash = document.getElementById('dashboard-section');
             if (dash && !dash.classList.contains('hidden')) {
                 initHome();
+                initTransazioni();
                 observer.disconnect();
             }
         });
         observer.observe(document.getElementById('dashboard-section'), { attributes: true });
+
+        // Refresh customer dropdown each time the transaction modal opens
+        document.getElementById('btn-add-transaction')?.addEventListener('click', () => {
+            refreshCustomerDropdown();
+        });
 
         // Mobile menu visibility
         const mq = window.matchMedia('(max-width: 768px)');
