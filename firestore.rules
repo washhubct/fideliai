@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Merchant profile: only the merchant themselves can read/write
+    match /merchants/{merchantId} {
+      allow read, write: if request.auth != null && request.auth.uid == merchantId;
+    }
+
+    // Subcollections under a merchant: only the merchant can access
+    match /merchants/{merchantId}/{subcollection}/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == merchantId;
+    }
+
+    // Card access: customers can read their own data via merchant/customer path
+    // Public read for card.html (no auth required for customer-facing card)
+    match /merchants/{merchantId}/customers/{customerId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == merchantId;
+    }
+
+    match /merchants/{merchantId}/rewards/{rewardId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == merchantId;
+    }
+
+    match /merchants/{merchantId}/transactions/{transactionId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == merchantId;
+    }
+  }
+}
