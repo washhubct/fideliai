@@ -1,7 +1,10 @@
-// FideliAI — AI Agent Module (Enhanced)
+// FideliAI — AI Agent Module (Enhanced + Cloud AI)
 import state from '../state.js';
-import { formatNumber, formatCurrency } from '../utils.js';
+import { formatNumber, formatCurrency, showToast } from '../utils.js';
 import { navigateTo } from './navigazione.js';
+
+// Cloud Function AI - usa Haiku quando disponibile, fallback locale
+let cloudAiAvailable = null; // null = non testato, true/false dopo primo tentativo
 
 // Mappa categoria merchant -> suggerimenti reward
 const CATEGORY_REWARD_SUGGESTIONS = {
@@ -338,18 +341,17 @@ function setupAiChat() {
         `;
         container.scrollTop = container.scrollHeight;
 
-        // Dopo 800ms, sostituisce con la risposta reale
-        setTimeout(() => {
+        // Prova Cloud AI (Haiku), fallback a risposta locale
+        callAi(message).then(response => {
             const typingEl = document.getElementById(typingId);
             if (typingEl) {
-                const response = getAiResponse(message);
                 typingEl.innerHTML = `
                     <div class="ai-avatar">🤖</div>
-                    <div class="ai-bubble">${response}</div>
+                    <div class="ai-bubble">${response.html}${response.remaining !== undefined ? `<br><span style="font-size:11px;color:var(--gray-400);margin-top:8px;display:block">${response.source === 'cloud' ? '🤖 Claude AI' : '💡 Analisi locale'} · ${response.remaining !== undefined ? response.remaining + ' domande rimanenti oggi' : ''}</span>` : ''}</div>
                 `;
             }
             container.scrollTop = container.scrollHeight;
-        }, 800);
+        });
 
         input.value = '';
     });
@@ -377,6 +379,46 @@ function injectTypingStyles() {
         }
     `;
     document.head.appendChild(style);
+}
+
+/**
+ * Chiama Cloud Function AI (Haiku) se disponibile, altrimenti fallback locale
+ */
+async function callAi(message) {
+    // Se sappiamo gia che il cloud non e disponibile, vai locale
+    if (cloudAiAvailable === false) {
+        return { html: getAiResponse(message), source: 'local' };
+    }
+
+    try {
+        // Chiama Firebase Cloud Function
+        const aiChat = firebase.functions('europe-west1').httpsCallable('aiChat');
+        const result = await aiChat({
+            message,
+            context: {
+                customersCount: (state.customers || []).length,
+                transactionsCount: (state.transactions || []).length
+            }
+        });
+
+        cloudAiAvailable = true;
+        return {
+            html: escapeHtml(result.data.response).replace(/\n/g, '<br>'),
+            source: 'cloud',
+            remaining: result.data.queriesRemaining
+        };
+    } catch (error) {
+        // Se Cloud Function non disponibile (non deployata, no Blaze, ecc.)
+        if (cloudAiAvailable === null) {
+            cloudAiAvailable = false;
+            console.log('Cloud AI non disponibile, uso analisi locale:', error.message);
+        }
+        // Rate limit reached
+        if (error.code === 'resource-exhausted') {
+            return { html: `⚠️ ${error.message}`, source: 'cloud', remaining: 0 };
+        }
+        return { html: getAiResponse(message), source: 'local' };
+    }
 }
 
 function getAiResponse(query) {

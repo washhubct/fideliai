@@ -5,6 +5,7 @@
             "firebase.json",
             "firestore.rules",
             "firestore.indexes.json",
+            "functions/**",
             "**/.*",
             "**/node_modules/**"
         ],
@@ -18,5 +19,9 @@
     "firestore": {
         "rules": "firestore.rules",
         "indexes": "firestore.indexes.json"
+    },
+    "functions": {
+        "source": "functions",
+        "runtime": "nodejs18"
     }
 }
