@@ -90,6 +90,9 @@
     <div id="dashboard-section" class="hidden">
         <div class="dashboard-layout">
 
+            <!-- Sidebar overlay for mobile -->
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
             <!-- Sidebar -->
             <aside class="sidebar">
                 <div class="sidebar-logo">
@@ -719,12 +722,35 @@
             refreshCustomerDropdown();
         });
 
-        // Mobile menu visibility
+        // Mobile menu visibility + overlay
         const mq = window.matchMedia('(max-width: 768px)');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+
         mq.addEventListener('change', (e) => {
             document.getElementById('menu-toggle').style.display = e.matches ? 'flex' : 'none';
+            if (!e.matches) {
+                document.querySelector('.sidebar').classList.remove('open');
+                sidebarOverlay.classList.remove('active');
+            }
         });
         if (mq.matches) document.getElementById('menu-toggle').style.display = 'flex';
+
+        // Show overlay when sidebar opens, hide when overlay is clicked
+        document.getElementById('menu-toggle').addEventListener('click', () => {
+            const sidebar = document.querySelector('.sidebar');
+            const isOpen = sidebar.classList.contains('open');
+            sidebarOverlay.classList.toggle('active', !isOpen);
+        });
+
+        sidebarOverlay.addEventListener('click', () => {
+            document.querySelector('.sidebar').classList.remove('open');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // Also close overlay when navigating (sidebar closes via navigazione.js)
+        window.addEventListener('module-change', () => {
+            sidebarOverlay.classList.remove('active');
+        });
     </script>
 
 </body>
