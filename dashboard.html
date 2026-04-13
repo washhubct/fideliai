@@ -4,10 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FideliAI — Dashboard</title>
+    <meta name="description" content="Dashboard FideliAI: gestisci clienti, punti fedeltà, premi e campagne della tua attività.">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="FideliAI — Dashboard">
+    <meta property="og:description" content="Dashboard FideliAI: gestisci clienti, punti fedeltà, premi e campagne della tua attività.">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>">
+    <style>
+        /* Onboarding Wizard */
+        .onboarding-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(15, 15, 30, 0.85);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+        .onboarding-overlay.active {
+            display: flex;
+        }
+        .onboarding-card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+            max-width: 480px;
+            width: 90%;
+            padding: 48px 40px 40px;
+            text-align: center;
+            position: relative;
+            animation: onb-fadeIn 0.4s ease;
+        }
+        @keyframes onb-fadeIn {
+            from { opacity: 0; transform: translateY(24px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .onb-step {
+            display: none;
+        }
+        .onb-step.active {
+            display: block;
+            animation: onb-stepIn 0.35s ease;
+        }
+        @keyframes onb-stepIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .onb-step h2 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--dark, #1a1a2e);
+        }
+        .onb-step p {
+            color: var(--gray-500, #6b7280);
+            font-size: 15px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .onb-step .form-group {
+            text-align: left;
+            margin-bottom: 16px;
+        }
+        .onb-step .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--dark, #1a1a2e);
+        }
+        .onb-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+        .onb-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--gray-200, #e5e7eb);
+            transition: all 0.3s ease;
+        }
+        .onb-indicator.active {
+            background: var(--primary, #6366f1);
+            transform: scale(1.3);
+        }
+        .onb-indicator.completed {
+            background: var(--success, #22c55e);
+        }
+        .onb-skip {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--gray-400, #9ca3af);
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .onb-skip:hover {
+            color: var(--primary, #6366f1);
+        }
+        .onb-logo {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .onb-business {
+            color: var(--primary, #6366f1);
+            font-weight: 700;
+        }
+        .onb-success-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+    </style>
 </head>
 <body>
 
@@ -34,8 +149,33 @@
                         </div>
                         <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">Accedi</button>
                     </form>
-                    <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--gray-500)">
+                    <p style="text-align:center;margin-top:16px;font-size:14px;color:var(--gray-500)">
+                        <a href="#" id="show-forgot" style="color:var(--primary);font-weight:600">Password dimenticata?</a>
+                    </p>
+                    <p style="text-align:center;margin-top:8px;font-size:14px;color:var(--gray-500)">
                         Non hai un account? <a href="#" id="show-register" style="color:var(--primary);font-weight:600">Registrati gratis</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Forgot Password -->
+            <div id="forgot-section" class="hidden">
+                <div class="auth-card">
+                    <div class="nav-logo" style="justify-content:center;color:var(--dark);margin-bottom:32px">
+                        <div class="logo-icon">💎</div>
+                        FideliAI
+                    </div>
+                    <h2>Recupera password</h2>
+                    <p class="auth-subtitle">Inserisci la tua email e ti invieremo un link per reimpostare la password.</p>
+                    <form id="forgot-form">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="forgot-email" class="form-control" placeholder="tu@azienda.it" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px">Invia link di reset</button>
+                    </form>
+                    <p style="text-align:center;margin-top:24px;font-size:14px;color:var(--gray-500)">
+                        <a href="#" id="show-login-from-forgot" style="color:var(--primary);font-weight:600">Torna al login</a>
                     </p>
                 </div>
             </div>
@@ -306,7 +446,10 @@
                                 <button class="btn btn-ghost btn-sm" data-filter="vip">VIP</button>
                                 <button class="btn btn-ghost btn-sm" data-filter="inactive">Inattivi</button>
                             </div>
-                            <button class="btn btn-primary btn-sm" onclick="document.getElementById('customer-modal').classList.add('active')">+ Aggiungi cliente</button>
+                            <div style="display:flex;gap:8px">
+                                <button class="btn btn-ghost btn-sm" id="btn-export-csv">Esporta CSV</button>
+                                <button class="btn btn-primary btn-sm" onclick="document.getElementById('customer-modal').classList.add('active')">+ Aggiungi cliente</button>
+                            </div>
                         </div>
                         <div class="panel-body">
                             <div class="table-container">
@@ -513,6 +656,66 @@
         </div>
     </div>
 
+    <!-- ============ ONBOARDING WIZARD ============ -->
+    <div class="onboarding-overlay" id="onboarding-wizard">
+        <div class="onboarding-card">
+            <div class="onb-indicators">
+                <div class="onb-indicator active" data-step="1"></div>
+                <div class="onb-indicator" data-step="2"></div>
+                <div class="onb-indicator" data-step="3"></div>
+                <div class="onb-indicator" data-step="4"></div>
+            </div>
+
+            <!-- Step 1: Benvenuto -->
+            <div class="onb-step active" id="onb-step-1">
+                <div class="onb-logo">💎</div>
+                <h2>Benvenuto su FideliAI!</h2>
+                <p>Ciao <span class="onb-business" id="onb-business-name"></span>! Configuriamo insieme il tuo programma fedeltà in pochi semplici passi.</p>
+                <button class="btn btn-primary btn-lg" id="onb-btn-start" style="width:100%">Iniziamo</button>
+            </div>
+
+            <!-- Step 2: Primo premio -->
+            <div class="onb-step" id="onb-step-2">
+                <h2>Configura il tuo primo premio</h2>
+                <p>I premi motivano i clienti a tornare. Ti suggeriamo qualcosa in base alla tua categoria.</p>
+                <div class="form-group">
+                    <label>Nome del premio</label>
+                    <input type="text" id="onb-reward-name" class="form-control" placeholder="Es. Caffe omaggio">
+                </div>
+                <div class="form-group">
+                    <label>Punti necessari</label>
+                    <input type="number" id="onb-reward-points" class="form-control" min="1" placeholder="100">
+                </div>
+                <button class="btn btn-primary btn-lg" id="onb-btn-reward" style="width:100%">Crea premio</button>
+                <a href="#" class="onb-skip" id="onb-skip-reward">Salta per ora</a>
+            </div>
+
+            <!-- Step 3: Primo cliente -->
+            <div class="onb-step" id="onb-step-3">
+                <h2>Aggiungi il primo cliente</h2>
+                <p>Inserisci i dati di un cliente per iniziare a tracciare la fedeltà.</p>
+                <div class="form-group">
+                    <label>Nome e cognome</label>
+                    <input type="text" id="onb-cust-name" class="form-control" placeholder="Mario Rossi">
+                </div>
+                <div class="form-group">
+                    <label>Email o telefono</label>
+                    <input type="text" id="onb-cust-contact" class="form-control" placeholder="mario@email.it o +39...">
+                </div>
+                <button class="btn btn-primary btn-lg" id="onb-btn-customer" style="width:100%">Aggiungi</button>
+                <a href="#" class="onb-skip" id="onb-skip-customer">Salta per ora</a>
+            </div>
+
+            <!-- Step 4: Tutto pronto -->
+            <div class="onb-step" id="onb-step-4">
+                <div class="onb-success-icon">🎉</div>
+                <h2>Tutto pronto!</h2>
+                <p>La tua dashboard è configurata. Ora puoi gestire clienti, premi e campagne dal pannello principale.</p>
+                <button class="btn btn-primary btn-lg" id="onb-btn-finish" style="width:100%">Vai alla dashboard</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ============ MODALS ============ -->
 
     <!-- Transaction Modal -->
@@ -682,15 +885,17 @@
         import { initNavigazione, navigateTo } from './js/moduli/navigazione.js';
         import { initHome } from './js/moduli/home.js';
         import { initLoyalty } from './js/moduli/loyalty.js';
-        import { initClienti } from './js/moduli/clienti.js';
+        import { initClienti, exportCSV } from './js/moduli/clienti.js';
         import { initCampagne } from './js/moduli/campagne.js';
         import { initAnalytics } from './js/moduli/analytics.js';
         import { initAiAgent } from './js/moduli/ai-agent.js';
         import { initImpostazioni } from './js/moduli/impostazioni.js';
         import { initTransazioni, refreshCustomerDropdown } from './js/moduli/transazioni.js';
+        import { initOnboarding, showOnboarding } from './js/moduli/onboarding.js';
 
         // Init auth first, then modules
         initAuth();
+        initOnboarding();
         initNavigazione();
 
         // Init modules on navigation

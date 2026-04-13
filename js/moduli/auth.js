@@ -2,6 +2,7 @@
 import { auth, db } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast } from '../utils.js';
+import { showOnboarding } from './onboarding.js';
 
 export function initAuth() {
     auth.onAuthStateChanged(async (user) => {
@@ -9,6 +10,9 @@ export function initAuth() {
             state.currentUser = user;
             await loadMerchantData(user.uid);
             showDashboard();
+            if (state.merchantData && !state.merchantData.onboardingCompleted) {
+                showOnboarding();
+            }
         } else {
             state.currentUser = null;
             state.merchantId = null;
@@ -45,14 +49,20 @@ function updateMerchantUI() {
 function setupAuthForms() {
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
+    const forgotForm = document.getElementById('forgot-form');
     const showRegister = document.getElementById('show-register');
     const showLogin = document.getElementById('show-login');
+    const showForgot = document.getElementById('show-forgot');
+    const showLoginFromForgot = document.getElementById('show-login-from-forgot');
 
     if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
     }
     if (registerForm) {
         registerForm.addEventListener('submit', handleRegister);
+    }
+    if (forgotForm) {
+        forgotForm.addEventListener('submit', handleForgotPassword);
     }
     if (showRegister) {
         showRegister.addEventListener('click', (e) => {
@@ -65,6 +75,20 @@ function setupAuthForms() {
         showLogin.addEventListener('click', (e) => {
             e.preventDefault();
             document.getElementById('register-section').classList.add('hidden');
+            document.getElementById('login-section').classList.remove('hidden');
+        });
+    }
+    if (showForgot) {
+        showForgot.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('forgot-section').classList.remove('hidden');
+        });
+    }
+    if (showLoginFromForgot) {
+        showLoginFromForgot.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('forgot-section').classList.add('hidden');
             document.getElementById('login-section').classList.remove('hidden');
         });
     }
@@ -111,6 +135,18 @@ async function handleRegister(e) {
         showToast('Account creato con successo!');
     } catch (error) {
         showToast('Errore: ' + error.message, 'error');
+    }
+}
+
+async function handleForgotPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value;
+
+    try {
+        await auth.sendPasswordResetEmail(email);
+        showToast('Email di reset inviata! Controlla la tua casella.');
+    } catch (error) {
+        showToast('Errore: email non trovata o non valida.', 'error');
     }
 }
 

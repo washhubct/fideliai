@@ -7,6 +7,14 @@ export function initClienti() {
     loadCustomers();
     setupClientiForms();
     setupQrModal();
+    setupExportCSV();
+}
+
+function setupExportCSV() {
+    const btn = document.getElementById('btn-export-csv');
+    if (btn) {
+        btn.addEventListener('click', exportCSV);
+    }
 }
 
 async function loadCustomers(filter = 'all') {
@@ -147,6 +155,42 @@ async function addCustomer(e) {
 
 function closeModal(id) {
     document.getElementById(id)?.classList.remove('active');
+}
+
+// ---- CSV Export ----
+
+export function exportCSV() {
+    const customers = state.customers;
+    const BOM = '\uFEFF';
+    const header = 'Nome;Email;Telefono;Punti;Livello;Visite;Ultima Visita';
+    const rows = customers.map(c => {
+        const level = getLevel(c.totalPoints || 0);
+        const lastVisit = c.lastVisit ? formatDate(c.lastVisit) : '-';
+        return [
+            c.name || '',
+            c.email || '',
+            c.phone || '',
+            c.totalPoints || 0,
+            level,
+            c.visits || 0,
+            lastVisit
+        ].join(';');
+    });
+
+    const csv = BOM + [header, ...rows].join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clienti_fideliai_${today}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Export completato');
 }
 
 // ---- QR Code ----

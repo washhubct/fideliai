@@ -5,6 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FideliAI — Fidelizza i tuoi clienti con l'intelligenza artificiale</title>
     <meta name="description" content="Piattaforma loyalty e CRM per negozi e attività locali. Card digitale, punti, premi, campagne e AI agent.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://fideliai-app.web.app/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="FideliAI — Fidelizza i tuoi clienti con l'intelligenza artificiale">
+    <meta property="og:description" content="Piattaforma loyalty e CRM per negozi e attività locali. Card digitale, punti, premi, campagne e AI agent.">
+    <meta property="og:url" content="https://fideliai-app.web.app/">
+    <meta property="og:image" content="https://fideliai-app.web.app/og-image.png">
+    <meta property="og:locale" content="it_IT">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FideliAI — Fidelizza i tuoi clienti con l'intelligenza artificiale">
+    <meta name="twitter:description" content="Piattaforma loyalty e CRM per negozi e attività locali. Card digitale, punti, premi, campagne e AI agent.">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "FideliAI",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Piattaforma loyalty e CRM per negozi e attività locali. Card digitale, punti, premi, campagne e AI agent.",
+        "url": "https://fideliai-app.web.app/",
+        "offers": {
+            "@type": "AggregateOffer",
+            "lowPrice": "19",
+            "highPrice": "69",
+            "priceCurrency": "EUR",
+            "offerCount": "3"
+        }
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
@@ -18,7 +54,8 @@
             <div class="logo-icon">💎</div>
             FideliAI
         </div>
-        <div class="nav-links">
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Apri menu">&#9776;</button>
+        <div class="nav-links" id="nav-links">
             <a href="#features">Funzionalità</a>
             <a href="#pricing">Prezzi</a>
             <a href="#demo">Demo</a>
@@ -227,8 +264,8 @@
                 <h4>Azienda</h4>
                 <a href="#">Chi siamo</a>
                 <a href="#">Contatti</a>
-                <a href="#">Privacy</a>
-                <a href="#">Termini</a>
+                <a href="./privacy.html">Privacy</a>
+                <a href="./terms.html">Termini</a>
             </div>
         </div>
         <div class="footer-bottom">
@@ -248,6 +285,23 @@
                 e.preventDefault();
                 const target = document.querySelector(a.getAttribute('href'));
                 if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Hamburger menu mobile
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const navLinks = document.getElementById('nav-links');
+
+        hamburgerBtn.addEventListener('click', () => {
+            navLinks.classList.toggle('open');
+            hamburgerBtn.textContent = navLinks.classList.contains('open') ? '\u2715' : '\u2630';
+        });
+
+        // Chiudi menu al click su un link
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('open');
+                hamburgerBtn.textContent = '\u2630';
             });
         });
     </script>
