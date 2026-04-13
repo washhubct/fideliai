@@ -1423,6 +1423,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
+        margin-bottom: 20px;
     }
     .topbar h1 { font-size: 22px; }
     .topbar-actions { width: 100%; }
@@ -1432,11 +1433,58 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     .config-grid { grid-template-columns: 1fr; }
 
     /* Forms full width mobile */
-    .form-control { width: 100%; }
+    .form-control { width: 100%; box-sizing: border-box; }
 
     /* Panels mobile */
-    .panel-header { flex-direction: column; align-items: flex-start; gap: 12px; }
-    .panel-header .btn { width: 100%; }
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+    }
+    .panel-header .btn { width: 100%; text-align: center; }
+    .panel-body { padding: 16px; }
+
+    /* Feature cards / reward cards mobile */
+    .feature-card { padding: 20px; }
+    .flex-between {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    /* Stat bars mobile */
+    .stat-bar { flex-direction: column; align-items: stretch; gap: 4px; }
+    .stat-bar-label { min-width: auto; }
+    .stat-bar-value { text-align: left; }
+
+    /* KPI grid mobile - already 1 column, fix padding */
+    .kpi-grid { gap: 12px; }
+    .kpi-card { padding: 16px; }
+    .kpi-card .kpi-value { font-size: 24px; }
+
+    /* Clienti table mobile */
+    .table-container { font-size: 13px; }
+    .data-table th, .data-table td { padding: 10px 8px; }
+
+    /* Segmentation KPIs mobile */
+    .module-section .kpi-grid[style] { grid-template-columns: repeat(2, 1fr) !important; }
+
+    /* Customer search bar mobile */
+    .panel-header > div { flex-direction: column; width: 100%; gap: 8px; }
+    .panel-header > div input[type="text"] { width: 100% !important; }
+
+    /* AI chat mobile */
+    .ai-bubble { max-width: 95%; }
+    .ai-input-bar { flex-direction: column; }
+    .ai-input-bar .btn { width: 100%; }
+
+    /* Modals mobile */
+    .modal { margin: 10px; max-height: 85vh; }
+    .modal-header { padding: 16px; }
+    .modal-body { padding: 16px; }
+    .modal-footer { padding: 12px 16px; flex-direction: column; }
+    .modal-footer .btn { width: 100%; }
 }
 
 /* Utility */
