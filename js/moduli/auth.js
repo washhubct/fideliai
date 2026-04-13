@@ -3,6 +3,7 @@ import { auth, db } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast } from '../utils.js';
 import { showOnboarding } from './onboarding.js';
+import { checkAutoUpgrade } from './impostazioni.js';
 
 export function initAuth() {
     auth.onAuthStateChanged(async (user) => {
@@ -13,6 +14,8 @@ export function initAuth() {
             if (state.merchantData && !state.merchantData.onboardingCompleted) {
                 showOnboarding();
             }
+            // Auto-upgrade se l'utente arriva dalla landing con ?plan=xxx
+            checkAutoUpgrade();
         } else {
             state.currentUser = null;
             state.merchantId = null;

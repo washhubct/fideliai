@@ -1,13 +1,87 @@
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const Anthropic = require("@anthropic-ai/sdk");
+const nodemailer = require("nodemailer");
+const Stripe = require("stripe");
 
 admin.initializeApp();
 const db = admin.firestore();
 
 // API key stored in Firebase Secret Manager
 const anthropicApiKey = defineSecret("ANTHROPIC_API_KEY");
+
+// Stripe secrets
+const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
+
+// SMTP secrets for email notifications
+const smtpHost = defineSecret("SMTP_HOST");
+const smtpPort = defineSecret("SMTP_PORT");
+const smtpUser = defineSecret("SMTP_USER");
+const smtpPass = defineSecret("SMTP_PASS");
+
+/**
+ * Creates a Nodemailer transporter using SMTP secrets.
+ */
+function createMailTransporter() {
+    return nodemailer.createTransport({
+        host: smtpHost.value(),
+        port: parseInt(smtpPort.value(), 10),
+        secure: parseInt(smtpPort.value(), 10) === 465,
+        auth: {
+            user: smtpUser.value(),
+            pass: smtpPass.value(),
+        },
+    });
+}
+
+/**
+ * Wraps email body content in the standard FideliAI HTML template.
+ */
+function emailTemplate(title, bodyHtml) {
+    return `<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${title}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f7;">
+<tr><td align="center" style="padding:24px 16px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+<!-- Header -->
+<tr>
+<td style="background:linear-gradient(135deg,#6366F1,#4F46E5);padding:32px 40px;text-align:center;">
+<span style="font-size:36px;">&#x1F48E;</span>
+<h1 style="margin:8px 0 0;color:#ffffff;font-size:24px;font-weight:700;">${title}</h1>
+</td>
+</tr>
+<!-- Body -->
+<tr>
+<td style="padding:32px 40px;">
+${bodyHtml}
+</td>
+</tr>
+<!-- Footer -->
+<tr>
+<td style="padding:24px 40px;background-color:#f9fafb;text-align:center;border-top:1px solid #e5e7eb;">
+<p style="margin:0 0 8px;color:#9ca3af;font-size:12px;">FideliAI &mdash; La piattaforma di fidelizzazione intelligente</p>
+<p style="margin:0;color:#9ca3af;font-size:11px;">
+<a href="https://app.fideliai.app/settings/notifications" style="color:#6366F1;text-decoration:underline;">Gestisci preferenze email</a> &middot;
+<a href="https://app.fideliai.app/unsubscribe" style="color:#6366F1;text-decoration:underline;">Disiscriviti</a>
+</p>
+</td>
+</tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
 
 // Rate limit: max queries per merchant per day
 const DAILY_LIMIT = 30;
@@ -183,6 +257,110 @@ REGOLE:
     }
 );
 
+// Send campaign to targeted customers
+exports.sendCampaign = onCall(
+    {
+        region: "europe-west1",
+        maxInstances: 5,
+    },
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Devi essere autenticato.");
+        }
+
+        const merchantId = request.auth.uid;
+        const { campaignId } = request.data;
+
+        if (!campaignId || typeof campaignId !== "string") {
+            throw new HttpsError("invalid-argument", "campaignId non valido.");
+        }
+
+        // Load campaign
+        const campaignRef = db.doc(`merchants/${merchantId}/campaigns/${campaignId}`);
+        const campaignDoc = await campaignRef.get();
+
+        if (!campaignDoc.exists) {
+            throw new HttpsError("not-found", "Campagna non trovata.");
+        }
+
+        const campaign = campaignDoc.data();
+
+        if (campaign.status === "completed") {
+            throw new HttpsError("failed-precondition", "Campagna già completata.");
+        }
+
+        // Update status to active
+        await campaignRef.update({ status: "active" });
+
+        // Load target customers based on segment
+        const customersQuery = db.collection(`merchants/${merchantId}/customers`);
+        const segment = campaign.segment || "all";
+
+        const allCustomersSnap = await customersQuery.get();
+        let targetCustomers = allCustomersSnap.docs;
+
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        if (segment === "vip") {
+            targetCustomers = targetCustomers.filter((doc) => {
+                const tier = doc.data().tier;
+                return tier === "gold" || tier === "platinum";
+            });
+        } else if (segment === "inactive") {
+            targetCustomers = targetCustomers.filter((doc) => {
+                const lastVisit = doc.data().lastVisit;
+                if (!lastVisit) return true;
+                return lastVisit.toDate() < thirtyDaysAgo;
+            });
+        } else if (segment === "new") {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            targetCustomers = targetCustomers.filter((doc) => {
+                const createdAt = doc.data().createdAt;
+                if (!createdAt) return false;
+                return createdAt.toDate() >= sevenDaysAgo;
+            });
+        }
+        // 'all' -> no filter needed
+
+        const sentCount = targetCustomers.length;
+
+        // Channel-specific handling
+        if (campaign.channel === "push") {
+            // FCM simulation - no real push tokens yet
+            console.log(
+                `[sendCampaign] Push simulato per ${sentCount} clienti. Campagna: "${campaign.name}"`
+            );
+            targetCustomers.forEach((doc) => {
+                console.log(
+                    `  -> Push a ${doc.data().name || doc.id}: "${campaign.message}"`
+                );
+            });
+        } else if (campaign.channel === "sms") {
+            // Twilio placeholder - log messages
+            console.log(
+                `[sendCampaign] SMS placeholder per ${sentCount} clienti. Campagna: "${campaign.name}"`
+            );
+            targetCustomers.forEach((doc) => {
+                const phone = doc.data().phone || "N/D";
+                console.log(
+                    `  -> SMS a ${doc.data().name || doc.id} (${phone}): "${campaign.message}"`
+                );
+            });
+        }
+
+        // Update campaign as completed
+        await campaignRef.update({
+            status: "completed",
+            sent: sentCount,
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        return { sent: sentCount, status: "completed" };
+    }
+);
+
 // Auto-generate insights (callable, not chat)
 exports.aiInsights = onCall(
     {
@@ -282,5 +460,507 @@ Solo il JSON, niente altro.`;
         });
 
         return { insights, cached: false };
+    }
+);
+
+// ========== STRIPE PAYMENT INTEGRATION ==========
+
+// Mappa piani ai Stripe Price ID (creare nella Stripe Dashboard)
+const PLAN_PRICES = {
+    starter: {
+        priceId: "price_starter_monthly",
+        name: "Starter",
+        amount: 1900, // centesimi
+    },
+    pro: {
+        priceId: "price_pro_monthly",
+        name: "Pro",
+        amount: 3900,
+    },
+    business: {
+        priceId: "price_business_monthly",
+        name: "Business",
+        amount: 6900,
+    },
+};
+
+/**
+ * Crea una Stripe Checkout Session per l'upgrade del piano.
+ * Il client invia { planId: 'starter' | 'pro' | 'business' }.
+ * Ritorna l'URL della sessione Checkout.
+ */
+exports.createCheckoutSession = onCall(
+    {
+        secrets: [stripeSecretKey],
+        region: "europe-west1",
+        maxInstances: 10,
+    },
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "Devi essere autenticato.");
+        }
+
+        const { planId } = request.data;
+        const plan = PLAN_PRICES[planId];
+
+        if (!plan) {
+            throw new HttpsError(
+                "invalid-argument",
+                "Piano non valido. Scegli tra: starter, pro, business."
+            );
+        }
+
+        const merchantId = request.auth.uid;
+        const customerEmail = request.auth.token.email;
+
+        const stripe = new Stripe(stripeSecretKey.value());
+
+        const baseUrl = "https://fideliai-app.web.app";
+
+        try {
+            const session = await stripe.checkout.sessions.create({
+                mode: "subscription",
+                payment_method_types: ["card"],
+                customer_email: customerEmail,
+                subscription_data: {
+                    trial_period_days: 14,
+                    metadata: {
+                        merchantId,
+                        planId,
+                    },
+                },
+                line_items: [
+                    {
+                        price: plan.priceId,
+                        quantity: 1,
+                    },
+                ],
+                success_url: `${baseUrl}/dashboard.html?payment=success&plan=${planId}`,
+                cancel_url: `${baseUrl}/dashboard.html?payment=cancelled`,
+                metadata: {
+                    merchantId,
+                    planId,
+                },
+            });
+
+            return { url: session.url };
+        } catch (error) {
+            console.error("Errore creazione Checkout Session:", error);
+            throw new HttpsError(
+                "internal",
+                "Errore nella creazione della sessione di pagamento."
+            );
+        }
+    }
+);
+
+/**
+ * Webhook Stripe per gestire eventi di pagamento.
+ * Ascolta: checkout.session.completed, customer.subscription.updated,
+ *          customer.subscription.deleted
+ */
+exports.stripeWebhook = onRequest(
+    {
+        secrets: [stripeSecretKey, stripeWebhookSecret],
+        region: "europe-west1",
+        maxInstances: 10,
+    },
+    async (req, res) => {
+        if (req.method !== "POST") {
+            res.status(405).send("Method Not Allowed");
+            return;
+        }
+
+        const stripe = new Stripe(stripeSecretKey.value());
+        const sig = req.headers["stripe-signature"];
+
+        let event;
+        try {
+            event = stripe.webhooks.constructEvent(
+                req.rawBody,
+                sig,
+                stripeWebhookSecret.value()
+            );
+        } catch (err) {
+            console.error("Errore verifica firma webhook:", err.message);
+            res.status(400).send(`Webhook Error: ${err.message}`);
+            return;
+        }
+
+        try {
+            switch (event.type) {
+                case "checkout.session.completed": {
+                    const session = event.data.object;
+                    const merchantId = session.metadata?.merchantId;
+                    const planId = session.metadata?.planId;
+
+                    if (merchantId && planId) {
+                        await db.doc(`merchants/${merchantId}`).update({
+                            plan: planId,
+                            stripeCustomerId: session.customer,
+                            stripeSubscriptionId: session.subscription,
+                            planUpdatedAt:
+                                admin.firestore.FieldValue.serverTimestamp(),
+                        });
+                        console.log(
+                            `Piano aggiornato: ${merchantId} -> ${planId}`
+                        );
+                    }
+                    break;
+                }
+
+                case "customer.subscription.updated": {
+                    const subscription = event.data.object;
+                    const merchantId =
+                        subscription.metadata?.merchantId;
+
+                    if (merchantId) {
+                        const status = subscription.status;
+                        const updateData = {
+                            stripeSubscriptionStatus: status,
+                            planUpdatedAt:
+                                admin.firestore.FieldValue.serverTimestamp(),
+                        };
+
+                        // Se la sottoscrizione e' cancellata o scaduta, torna a starter
+                        if (
+                            status === "canceled" ||
+                            status === "unpaid" ||
+                            status === "past_due"
+                        ) {
+                            updateData.plan = "starter";
+                        }
+
+                        await db
+                            .doc(`merchants/${merchantId}`)
+                            .update(updateData);
+                        console.log(
+                            `Sottoscrizione aggiornata: ${merchantId} -> ${status}`
+                        );
+                    }
+                    break;
+                }
+
+                case "customer.subscription.deleted": {
+                    const subscription = event.data.object;
+                    const merchantId =
+                        subscription.metadata?.merchantId;
+
+                    if (merchantId) {
+                        await db.doc(`merchants/${merchantId}`).update({
+                            plan: "starter",
+                            stripeSubscriptionStatus: "canceled",
+                            planUpdatedAt:
+                                admin.firestore.FieldValue.serverTimestamp(),
+                        });
+                        console.log(
+                            `Sottoscrizione cancellata: ${merchantId} -> starter`
+                        );
+                    }
+                    break;
+                }
+
+                default:
+                    console.log(`Evento Stripe non gestito: ${event.type}`);
+            }
+
+            res.status(200).json({ received: true });
+        } catch (error) {
+            console.error("Errore gestione evento webhook:", error);
+            res.status(500).send("Errore interno webhook");
+        }
+    }
+);
+
+// ---------------------------------------------------------------------------
+// Email Notification Functions
+// ---------------------------------------------------------------------------
+
+/**
+ * 1. Welcome Email — fires when a new merchant document is created.
+ */
+exports.onMerchantCreated = onDocumentCreated(
+    {
+        document: "merchants/{merchantId}",
+        region: "europe-west1",
+        secrets: [smtpHost, smtpPort, smtpUser, smtpPass],
+    },
+    async (event) => {
+        const snap = event.data;
+        if (!snap) return;
+
+        const merchant = snap.data();
+        const email = merchant.email;
+        if (!email) {
+            console.warn("onMerchantCreated: merchant has no email, skipping.");
+            return;
+        }
+
+        const businessName = merchant.businessName || "il tuo negozio";
+        const dashboardUrl = "https://app.fideliai.app/dashboard";
+
+        const bodyHtml = `
+<p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">
+Ciao <strong>${businessName}</strong>,
+</p>
+<p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
+Benvenuto su <strong>FideliAI</strong>! Siamo entusiasti di averti a bordo. La tua piattaforma di fidelizzazione intelligente &egrave; pronta per aiutarti a far crescere il tuo business.
+</p>
+<h2 style="margin:0 0 16px;color:#1f2937;font-size:18px;font-weight:600;">Inizia subito in 3 passi:</h2>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+<tr>
+<td style="padding:12px 16px;background-color:#eef2ff;border-radius:8px;margin-bottom:8px;">
+<p style="margin:0;color:#4338ca;font-size:14px;font-weight:600;">1. Configura il tuo programma fedelt&agrave;</p>
+<p style="margin:4px 0 0;color:#6b7280;font-size:13px;">Imposta quanti punti assegnare per ogni euro speso dai tuoi clienti.</p>
+</td>
+</tr>
+<tr><td style="height:8px;"></td></tr>
+<tr>
+<td style="padding:12px 16px;background-color:#eef2ff;border-radius:8px;">
+<p style="margin:0;color:#4338ca;font-size:14px;font-weight:600;">2. Aggiungi i tuoi premi</p>
+<p style="margin:4px 0 0;color:#6b7280;font-size:13px;">Crea premi irresistibili che motiveranno i clienti a tornare.</p>
+</td>
+</tr>
+<tr><td style="height:8px;"></td></tr>
+<tr>
+<td style="padding:12px 16px;background-color:#eef2ff;border-radius:8px;">
+<p style="margin:0;color:#4338ca;font-size:14px;font-weight:600;">3. Registra il primo cliente</p>
+<p style="margin:4px 0 0;color:#6b7280;font-size:13px;">Scansiona o inserisci i dati del tuo primo cliente e inizia a fidelizzare!</p>
+</td>
+</tr>
+</table>
+<div style="text-align:center;margin:24px 0 8px;">
+<a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;background-color:#6366F1;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;border-radius:8px;">Vai alla Dashboard</a>
+</div>`;
+
+        const html = emailTemplate("Benvenuto su FideliAI!", bodyHtml);
+        const transporter = createMailTransporter();
+
+        await transporter.sendMail({
+            from: "FideliAI <noreply@fideliai.app>",
+            to: email,
+            subject: "Benvenuto su FideliAI! \uD83D\uDC8E",
+            html,
+        });
+
+        console.log(`Welcome email sent to ${email} (merchant ${event.params.merchantId}).`);
+    }
+);
+
+/**
+ * 2. Weekly Report — runs every Monday at 09:00 Europe/Rome.
+ *    Sends a weekly KPI summary to each onboarded merchant.
+ */
+exports.weeklyReport = onSchedule(
+    {
+        schedule: "every monday 09:00",
+        timeZone: "Europe/Rome",
+        region: "europe-west1",
+        secrets: [smtpHost, smtpPort, smtpUser, smtpPass],
+        maxInstances: 1,
+    },
+    async () => {
+        const merchantsSnap = await db
+            .collection("merchants")
+            .where("onboardingCompleted", "==", true)
+            .get();
+
+        if (merchantsSnap.empty) {
+            console.log("weeklyReport: no onboarded merchants, skipping.");
+            return;
+        }
+
+        const transporter = createMailTransporter();
+        const now = new Date();
+        const sevenDaysAgo = new Date(now);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        for (const merchantDoc of merchantsSnap.docs) {
+            const merchant = merchantDoc.data();
+            const merchantId = merchantDoc.id;
+            const email = merchant.email;
+            if (!email) continue;
+
+            // Fetch last 7 days transactions
+            const transSnap = await db
+                .collection(`merchants/${merchantId}/transactions`)
+                .where("createdAt", ">=", sevenDaysAgo)
+                .orderBy("createdAt", "desc")
+                .get();
+
+            // Skip merchants with zero transactions ever
+            if (transSnap.empty) {
+                const anyTransSnap = await db
+                    .collection(`merchants/${merchantId}/transactions`)
+                    .limit(1)
+                    .get();
+                if (anyTransSnap.empty) continue;
+            }
+
+            const transactions = transSnap.docs.map((d) => d.data());
+            const txCount = transactions.length;
+            const revenue = transactions.reduce((s, t) => s + (t.amount || 0), 0);
+            const pointsIssued = transactions.reduce((s, t) => s + (t.points || 0), 0);
+
+            // New customers in last 7 days
+            const newCustSnap = await db
+                .collection(`merchants/${merchantId}/customers`)
+                .where("createdAt", ">=", sevenDaysAgo)
+                .get();
+            const newCustomers = newCustSnap.size;
+
+            const businessName = merchant.businessName || "il tuo negozio";
+            const dashboardUrl = "https://app.fideliai.app/dashboard";
+
+            const kpiCard = (label, value, color) => `
+<td style="width:50%;padding:8px;">
+<div style="background-color:#f9fafb;border-radius:8px;padding:20px;text-align:center;border-left:4px solid ${color};">
+<p style="margin:0 0 4px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">${label}</p>
+<p style="margin:0;color:#1f2937;font-size:28px;font-weight:700;">${value}</p>
+</div>
+</td>`;
+
+            const bodyHtml = `
+<p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">
+Ciao <strong>${businessName}</strong>,
+</p>
+<p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
+Ecco il riepilogo della tua attivit&agrave; negli ultimi <strong>7 giorni</strong>:
+</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+<tr>
+${kpiCard("Transazioni", txCount, "#6366F1")}
+${kpiCard("Revenue", `&euro;${revenue.toFixed(2)}`, "#10b981")}
+</tr>
+<tr>
+${kpiCard("Nuovi Clienti", newCustomers, "#f59e0b")}
+${kpiCard("Punti Emessi", pointsIssued.toLocaleString("it-IT"), "#ef4444")}
+</tr>
+</table>
+<div style="text-align:center;margin:28px 0 8px;">
+<a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;background-color:#6366F1;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;border-radius:8px;">Vai alla Dashboard</a>
+</div>`;
+
+            const html = emailTemplate("Report Settimanale", bodyHtml);
+
+            await transporter.sendMail({
+                from: "FideliAI <noreply@fideliai.app>",
+                to: email,
+                subject: `Report Settimanale \u2014 ${businessName}`,
+                html,
+            });
+
+            console.log(`Weekly report sent to ${email} (merchant ${merchantId}).`);
+        }
+    }
+);
+
+/**
+ * 3. Inactive Customer Alert — runs daily at 10:00 Europe/Rome.
+ *    Alerts merchants about customers who haven't visited in 30+ days
+ *    and became inactive in the last 24 hours.
+ */
+exports.inactiveCustomerAlert = onSchedule(
+    {
+        schedule: "every day 10:00",
+        timeZone: "Europe/Rome",
+        region: "europe-west1",
+        secrets: [smtpHost, smtpPort, smtpUser, smtpPass],
+        maxInstances: 1,
+    },
+    async () => {
+        const merchantsSnap = await db.collection("merchants").get();
+
+        if (merchantsSnap.empty) {
+            console.log("inactiveCustomerAlert: no merchants, skipping.");
+            return;
+        }
+
+        const transporter = createMailTransporter();
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now);
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const thirtyOneDaysAgo = new Date(now);
+        thirtyOneDaysAgo.setDate(thirtyOneDaysAgo.getDate() - 31);
+
+        for (const merchantDoc of merchantsSnap.docs) {
+            const merchant = merchantDoc.data();
+            const merchantId = merchantDoc.id;
+            const email = merchant.email;
+            if (!email) continue;
+
+            // Customers whose last visit was between 30 and 31 days ago
+            // (i.e. they became inactive in the last 24h)
+            const customersSnap = await db
+                .collection(`merchants/${merchantId}/customers`)
+                .where("lastVisit", "<=", thirtyDaysAgo)
+                .where("lastVisit", ">=", thirtyOneDaysAgo)
+                .get();
+
+            if (customersSnap.empty) continue;
+
+            const newlyInactive = customersSnap.docs.map((d) => d.data());
+            const count = newlyInactive.length;
+            const topThree = newlyInactive.slice(0, 3);
+
+            const businessName = merchant.businessName || "il tuo negozio";
+            const dashboardUrl = "https://app.fideliai.app/dashboard/customers";
+
+            const customerRows = topThree
+                .map((c) => {
+                    const name = c.name || "Cliente senza nome";
+                    const lastVisit = c.lastVisit
+                        ? c.lastVisit.toDate().toLocaleDateString("it-IT")
+                        : "N/D";
+                    return `<tr>
+<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#374151;font-size:14px;">${name}</td>
+<td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280;font-size:14px;text-align:right;">${lastVisit}</td>
+</tr>`;
+                })
+                .join("");
+
+            const moreText =
+                count > 3
+                    ? `<p style="margin:16px 0 0;color:#6b7280;font-size:13px;text-align:center;">...e altri ${count - 3} clienti inattivi.</p>`
+                    : "";
+
+            const bodyHtml = `
+<p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">
+Ciao <strong>${businessName}</strong>,
+</p>
+<div style="background-color:#fef3c7;border-left:4px solid #f59e0b;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+<p style="margin:0;color:#92400e;font-size:15px;font-weight:600;">
+&#x26A0;&#xFE0F; Hai ${count} client${count === 1 ? "e" : "i"} che non visitano da 30+ giorni
+</p>
+<p style="margin:8px 0 0;color:#92400e;font-size:14px;">
+Crea una campagna di riattivazione per riportarli nel tuo negozio!
+</p>
+</div>
+<h3 style="margin:0 0 12px;color:#1f2937;font-size:16px;font-weight:600;">Clienti diventati inattivi:</h3>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+<tr style="background-color:#f9fafb;">
+<td style="padding:8px 12px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Nome</td>
+<td style="padding:8px 12px;color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;text-align:right;">Ultima Visita</td>
+</tr>
+${customerRows}
+</table>
+${moreText}
+<div style="text-align:center;margin:28px 0 8px;">
+<a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;background-color:#6366F1;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;border-radius:8px;">Gestisci Clienti</a>
+</div>`;
+
+            const html = emailTemplate("Allarme Clienti Inattivi", bodyHtml);
+
+            await transporter.sendMail({
+                from: "FideliAI <noreply@fideliai.app>",
+                to: email,
+                subject: `\u26A0\uFE0F ${count} client${count === 1 ? "e" : "i"} inattiv${count === 1 ? "o" : "i"} \u2014 ${businessName}`,
+                html,
+            });
+
+            console.log(
+                `Inactive customer alert sent to ${email} (merchant ${merchantId}, ${count} newly inactive).`
+            );
+        }
     }
 );
