@@ -2,13 +2,14 @@ const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https")
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
-const admin = require("firebase-admin");
-const Anthropic = require("@anthropic-ai/sdk");
-const nodemailer = require("nodemailer");
-const Stripe = require("stripe");
 
-admin.initializeApp();
-const db = admin.firestore();
+// Lazy-loaded modules (avoid deployment timeout)
+let _admin, _db, _Anthropic, _nodemailer, _Stripe;
+const getAdmin = () => { if (!_admin) { _admin = require("firebase-admin"); _admin.initializeApp(); } return _admin; };
+const getDb = () => { if (!_db) _db = getAdmin().firestore(); return _db; };
+const getAnthropic = () => { if (!_Anthropic) _Anthropic = require("@anthropic-ai/sdk"); return _Anthropic; };
+const getNodemailer = () => { if (!_nodemailer) _nodemailer = require("nodemailer"); return _nodemailer; };
+const getStripe = () => { if (!_Stripe) _Stripe = require("stripe"); return _Stripe; };
 
 // API key stored in Firebase Secret Manager
 const anthropicApiKey = defineSecret("ANTHROPIC_API_KEY");
@@ -27,7 +28,7 @@ const smtpPass = defineSecret("SMTP_PASS");
  * Creates a Nodemailer transporter using SMTP secrets.
  */
 function createMailTransporter() {
-    return nodemailer.createTransport({
+    return getNodemailer().createTransport({
         host: smtpHost.value(),
         port: parseInt(smtpPort.value(), 10),
         secure: parseInt(smtpPort.value(), 10) === 465,
@@ -215,7 +216,7 @@ REGOLE:
 - Non inventare dati che non hai`;
 
         // Call Claude Haiku
-        const client = new Anthropic({ apiKey: anthropicApiKey.value() });
+        const client = new (getAnthropic())({ apiKey: anthropicApiKey.value() });
 
         const response = await client.messages.create({
             model: "claude-haiku-4-5-20251001",
@@ -231,7 +232,7 @@ REGOLE:
         await rateLimitRef.set(
             {
                 count: currentCount + 1,
-                lastQuery: admin.firestore.FieldValue.serverTimestamp(),
+                lastQuery: getAdmin().firestore.FieldValue.serverTimestamp(),
             },
             { merge: true }
         );
@@ -246,7 +247,7 @@ REGOLE:
             outputTokens,
             model: "claude-haiku-4-5-20251001",
             date: today,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
         return {
@@ -354,7 +355,7 @@ exports.sendCampaign = onCall(
         await campaignRef.update({
             status: "completed",
             sent: sentCount,
-            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            completedAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
         return { sent: sentCount, status: "completed" };
@@ -432,7 +433,7 @@ Rispondi in JSON array con esattamente 3 oggetti:
 
 Solo il JSON, niente altro.`;
 
-        const client = new Anthropic({ apiKey: anthropicApiKey.value() });
+        const client = new (getAnthropic())({ apiKey: anthropicApiKey.value() });
 
         const response = await client.messages.create({
             model: "claude-haiku-4-5-20251001",
@@ -456,7 +457,7 @@ Solo il JSON, niente altro.`;
         // Cache results
         await cacheRef.set({
             insights,
-            cachedAt: admin.firestore.FieldValue.serverTimestamp(),
+            cachedAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
         return { insights, cached: false };
@@ -513,7 +514,7 @@ exports.createCheckoutSession = onCall(
         const merchantId = request.auth.uid;
         const customerEmail = request.auth.token.email;
 
-        const stripe = new Stripe(stripeSecretKey.value());
+        const stripe = new (getStripe())(stripeSecretKey.value());
 
         const baseUrl = "https://fideliai-app.web.app";
 
@@ -571,7 +572,7 @@ exports.stripeWebhook = onRequest(
             return;
         }
 
-        const stripe = new Stripe(stripeSecretKey.value());
+        const stripe = new (getStripe())(stripeSecretKey.value());
         const sig = req.headers["stripe-signature"];
 
         let event;
@@ -600,7 +601,7 @@ exports.stripeWebhook = onRequest(
                             stripeCustomerId: session.customer,
                             stripeSubscriptionId: session.subscription,
                             planUpdatedAt:
-                                admin.firestore.FieldValue.serverTimestamp(),
+                                getAdmin().firestore.FieldValue.serverTimestamp(),
                         });
                         console.log(
                             `Piano aggiornato: ${merchantId} -> ${planId}`
@@ -619,7 +620,7 @@ exports.stripeWebhook = onRequest(
                         const updateData = {
                             stripeSubscriptionStatus: status,
                             planUpdatedAt:
-                                admin.firestore.FieldValue.serverTimestamp(),
+                                getAdmin().firestore.FieldValue.serverTimestamp(),
                         };
 
                         // Se la sottoscrizione e' cancellata o scaduta, torna a starter
@@ -651,7 +652,7 @@ exports.stripeWebhook = onRequest(
                             plan: "starter",
                             stripeSubscriptionStatus: "canceled",
                             planUpdatedAt:
-                                admin.firestore.FieldValue.serverTimestamp(),
+                                getAdmin().firestore.FieldValue.serverTimestamp(),
                         });
                         console.log(
                             `Sottoscrizione cancellata: ${merchantId} -> starter`
@@ -682,6 +683,7 @@ exports.stripeWebhook = onRequest(
 exports.onMerchantCreated = onDocumentCreated(
     {
         document: "merchants/{merchantId}",
+        database: "default",
         region: "europe-west1",
         secrets: [smtpHost, smtpPort, smtpUser, smtpPass],
     },
