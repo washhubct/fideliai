@@ -10,9 +10,11 @@ const firebaseConfig = {
     appId: "1:49232775542:web:e5e5771426462389c5d257"
 };
 
-firebase.initializeApp(firebaseConfig);
+// firebase is a global from the compat SDK script tags
+const app = firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
+const firebaseRef = firebase;
 
-export { auth, db, firebase };
+export { auth, db, firebaseRef as firebase };
