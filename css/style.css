@@ -797,8 +797,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .main-content {
     margin-left: var(--sidebar-width);
     padding: 32px;
-    overflow-x: hidden;
     min-height: 100vh;
+    min-width: 0;
 }
 
 .topbar {
@@ -900,13 +900,9 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     font-size: 17px;
     font-weight: 700;
     color: var(--dark);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
 }
 
-.panel-body { padding: 24px; overflow: hidden; }
+.panel-body { padding: 24px; }
 
 /* Tables */
 .table-container { overflow-x: auto; }
@@ -1012,8 +1008,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     display: flex;
     flex-direction: column;
     gap: 16px;
-    width: 100%;
-    overflow: hidden;
 }
 
 .ai-message {
@@ -1464,9 +1458,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
         gap: 12px;
         padding: 16px;
     }
-    .panel-header h3 { flex: 1; min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; }
     .panel-header .btn { flex-shrink: 0; }
-    .panel-body { padding: 16px; overflow: hidden; }
+    .panel-body { padding: 16px; }
 
     /* Feature cards / reward cards mobile */
     .feature-card { padding: 16px; word-break: break-word; }
