@@ -127,7 +127,7 @@ async function handleUpgrade(planId) {
     }
 
     try {
-        const createCheckoutSession = firebase.functions('europe-west1').httpsCallable('createCheckoutSession');
+        const createCheckoutSession = firebase.app().functions('europe-west1').httpsCallable('createCheckoutSession');
         const result = await createCheckoutSession({ planId });
 
         if (result.data && result.data.url) {
