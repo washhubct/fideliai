@@ -804,6 +804,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-bottom: 32px;
 }
 
@@ -811,6 +813,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     font-size: 28px;
     font-weight: 800;
     color: var(--dark);
+    flex: 1;
+    min-width: 200px;
 }
 
 .topbar-actions { display: flex; gap: 12px; align-items: center; }
@@ -885,6 +889,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
     padding: 20px 24px;
     border-bottom: 1px solid var(--gray-200);
 }
@@ -1007,6 +1013,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     display: flex;
     gap: 12px;
     align-items: flex-start;
+    min-width: 0;
 }
 
 .ai-avatar {
@@ -1026,10 +1033,13 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     background: var(--gray-50);
     border-radius: 12px 12px 12px 4px;
     padding: 16px;
-    max-width: 80%;
+    max-width: 85%;
+    min-width: 0;
     font-size: 14px;
     line-height: 1.7;
     color: var(--gray-700);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .ai-bubble strong { color: var(--dark); }
@@ -1358,32 +1368,9 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .config-grid { grid-template-columns: 1fr; }
 
-    /* Dashboard topbar */
-    .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        margin-bottom: 20px;
-    }
+    /* Dashboard adjustments for tablet */
     .topbar h1 { font-size: 22px; }
-    .topbar-actions { width: 100%; }
-    .topbar-actions .btn { width: 100%; }
-
-    /* Panel headers */
-    .panel-header {
-        flex-wrap: wrap;
-        gap: 12px;
-        padding: 16px;
-    }
-    .panel-header h3 { width: 100%; }
-    .panel-header .btn { width: 100%; text-align: center; }
-
-    /* Feature/reward cards */
-    .feature-card { padding: 16px; word-break: break-word; }
-
-    /* Customer search */
-    .panel-header > div { flex-wrap: wrap; width: 100%; }
-    .panel-header > div input[type="text"] { width: 100% !important; }
+    .feature-card { padding: 16px; }
 }
 
 @media (max-width: 768px) {
@@ -1525,7 +1512,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .mt-16 { margin-top: 16px; }
 .mt-24 { margin-top: 24px; }
 .flex { display: flex; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
 .gap-8 { gap: 8px; }
 .gap-16 { gap: 16px; }
 .hidden { display: none !important; }
