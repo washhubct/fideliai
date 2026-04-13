@@ -1357,6 +1357,33 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     .footer-content { grid-template-columns: 1fr 1fr; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .config-grid { grid-template-columns: 1fr; }
+
+    /* Dashboard topbar */
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .topbar h1 { font-size: 22px; }
+    .topbar-actions { width: 100%; }
+    .topbar-actions .btn { width: 100%; }
+
+    /* Panel headers */
+    .panel-header {
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 16px;
+    }
+    .panel-header h3 { width: 100%; }
+    .panel-header .btn { width: 100%; text-align: center; }
+
+    /* Feature/reward cards */
+    .feature-card { padding: 16px; word-break: break-word; }
+
+    /* Customer search */
+    .panel-header > div { flex-wrap: wrap; width: 100%; }
+    .panel-header > div input[type="text"] { width: 100% !important; }
 }
 
 @media (max-width: 768px) {
