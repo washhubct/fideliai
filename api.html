@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference — FideliAI</title>
+    <meta name="description" content="Documentazione delle API REST di FideliAI. Integra la piattaforma loyalty e CRM nel tuo software.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>">
+    <style>
+        .legal-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 120px 24px 80px;
+        }
+        .legal-content h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+        .legal-content .last-updated {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 48px;
+        }
+        .legal-content h2 {
+            font-size: 1.4rem;
+            margin-top: 40px;
+            margin-bottom: 16px;
+        }
+        .legal-content h3 {
+            font-size: 1.1rem;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+        .legal-content p,
+        .legal-content li {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+        .legal-content ul {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+        .legal-content ul li {
+            margin-bottom: 6px;
+        }
+        .legal-content a {
+            color: var(--primary);
+        }
+        .api-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .api-badge.coming-soon {
+            background: rgba(255, 179, 0, 0.15);
+            color: #ffb300;
+            border: 1px solid rgba(255, 179, 0, 0.3);
+        }
+        .api-badge.business {
+            background: rgba(124, 58, 237, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+        .code-block {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin: 16px 0 24px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: #e2e8f0;
+        }
+        .code-block .method {
+            color: #34d399;
+            font-weight: 700;
+        }
+        .code-block .url {
+            color: #93c5fd;
+        }
+        .code-block .key {
+            color: #a78bfa;
+        }
+        .code-block .string {
+            color: #fbbf24;
+        }
+        .code-block .number {
+            color: #34d399;
+        }
+        .code-block .comment {
+            color: #64748b;
+        }
+        .endpoint-card {
+            padding: 24px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 24px;
+        }
+        .endpoint-card h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="landing-nav" id="landing-nav">
+        <div class="nav-logo">
+            <div class="logo-icon">💎</div>
+            FideliAI
+        </div>
+        <div class="nav-links">
+            <a href="./index.html">Torna alla home</a>
+        </div>
+    </nav>
+
+    <!-- API Reference Content -->
+    <div class="legal-content">
+        <h1>API Reference</h1>
+        <p class="last-updated">Integra FideliAI nel tuo software</p>
+
+        <span class="api-badge business">API disponibile nel piano Business</span>
+
+        <p>Le API REST di FideliAI ti permettono di integrare la piattaforma loyalty e CRM direttamente nel tuo software gestionale, e-commerce o app personalizzata. Tutte le chiamate utilizzano il formato JSON e richiedono autenticazione tramite API key.</p>
+
+        <h2>Autenticazione</h2>
+        <p>Tutte le richieste API devono includere la tua API key nell'header <code>Authorization</code>:</p>
+
+        <div class="code-block">
+            <span class="method">Authorization:</span> <span class="string">Bearer YOUR_API_KEY</span>
+        </div>
+
+        <p>Puoi generare la tua API key dalla dashboard, nella sezione <strong>Impostazioni &gt; Integrazioni</strong>.</p>
+
+        <h2>Base URL</h2>
+        <div class="code-block">
+            <span class="url">https://api.fideliai.app/v1</span>
+        </div>
+
+        <h2>Endpoint principali</h2>
+
+        <div class="endpoint-card">
+            <h3>Elenco clienti</h3>
+            <div class="code-block">
+<span class="method">GET</span> <span class="url">/customers</span>
+
+<span class="comment">// Risposta</span>
+{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="string">"cust_abc123"</span>,
+      <span class="key">"name"</span>: <span class="string">"Marco Rossi"</span>,
+      <span class="key">"email"</span>: <span class="string">"marco.rossi@email.com"</span>,
+      <span class="key">"points"</span>: <span class="number">350</span>,
+      <span class="key">"tier"</span>: <span class="string">"gold"</span>,
+      <span class="key">"created_at"</span>: <span class="string">"2026-01-15T10:30:00Z"</span>
+    }
+  ],
+  <span class="key">"total"</span>: <span class="number">142</span>,
+  <span class="key">"page"</span>: <span class="number">1</span>,
+  <span class="key">"per_page"</span>: <span class="number">20</span>
+}
+            </div>
+            <p>Restituisce l'elenco paginato dei tuoi clienti con i rispettivi punti e livello fedelt&agrave;.</p>
+        </div>
+
+        <div class="endpoint-card">
+            <h3>Registra transazione</h3>
+            <div class="code-block">
+<span class="method">POST</span> <span class="url">/transactions</span>
+
+<span class="comment">// Corpo della richiesta</span>
+{
+  <span class="key">"customer_id"</span>: <span class="string">"cust_abc123"</span>,
+  <span class="key">"amount"</span>: <span class="number">25.50</span>,
+  <span class="key">"description"</span>: <span class="string">"Acquisto in negozio"</span>
+}
+
+<span class="comment">// Risposta</span>
+{
+  <span class="key">"id"</span>: <span class="string">"txn_xyz789"</span>,
+  <span class="key">"customer_id"</span>: <span class="string">"cust_abc123"</span>,
+  <span class="key">"amount"</span>: <span class="number">25.50</span>,
+  <span class="key">"points_earned"</span>: <span class="number">25</span>,
+  <span class="key">"total_points"</span>: <span class="number">375</span>,
+  <span class="key">"created_at"</span>: <span class="string">"2026-04-12T14:22:00Z"</span>
+}
+            </div>
+            <p>Registra una nuova transazione e assegna automaticamente i punti fedelt&agrave; al cliente in base alle regole configurate.</p>
+        </div>
+
+        <div class="endpoint-card">
+            <h3>Elenco premi</h3>
+            <div class="code-block">
+<span class="method">GET</span> <span class="url">/rewards</span>
+
+<span class="comment">// Risposta</span>
+{
+  <span class="key">"data"</span>: [
+    {
+      <span class="key">"id"</span>: <span class="string">"rew_def456"</span>,
+      <span class="key">"name"</span>: <span class="string">"Caff&egrave; omaggio"</span>,
+      <span class="key">"points_required"</span>: <span class="number">100</span>,
+      <span class="key">"active"</span>: <span class="number">true</span>,
+      <span class="key">"redeemed_count"</span>: <span class="number">87</span>
+    }
+  ],
+  <span class="key">"total"</span>: <span class="number">5</span>
+}
+            </div>
+            <p>Restituisce l'elenco dei premi configurati con le relative statistiche di riscatto.</p>
+        </div>
+
+        <h2>Rate limiting</h2>
+        <p>Le API sono soggette a limiti di utilizzo per garantire la stabilit&agrave; del servizio:</p>
+        <ul>
+            <li><strong>Piano Business:</strong> 1.000 richieste/minuto</li>
+            <li>Le risposte includono gli header <code>X-RateLimit-Remaining</code> e <code>X-RateLimit-Reset</code></li>
+        </ul>
+
+        <h2>Codici di errore</h2>
+        <ul>
+            <li><strong>400</strong> — Richiesta non valida. Verifica i parametri inviati.</li>
+            <li><strong>401</strong> — Autenticazione fallita. Controlla la tua API key.</li>
+            <li><strong>403</strong> — Accesso negato. La tua API key non ha i permessi necessari.</li>
+            <li><strong>404</strong> — Risorsa non trovata.</li>
+            <li><strong>429</strong> — Troppe richieste. Hai superato il rate limit.</li>
+            <li><strong>500</strong> — Errore interno del server. Riprova pi&ugrave; tardi.</li>
+        </ul>
+
+        <h2>Prossimamente</h2>
+        <span class="api-badge coming-soon">Coming soon</span>
+        <p>Stiamo lavorando all'espansione delle nostre API. Le prossime funzionalit&agrave; includeranno:</p>
+        <ul>
+            <li>Webhook per eventi in tempo reale (nuova transazione, premio riscattato, nuovo cliente)</li>
+            <li>Endpoint per la gestione delle campagne</li>
+            <li>SDK ufficiali per JavaScript, Python e PHP</li>
+            <li>Ambiente sandbox per i test</li>
+        </ul>
+
+        <p>Per richiedere l'accesso anticipato alle API o per domande, contattaci a <a href="mailto:supporto@fidelai.it">supporto@fidelai.it</a>.</p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="nav-logo">
+                    <div class="logo-icon">💎</div>
+                    FideliAI
+                </div>
+                <p>La piattaforma loyalty e CRM con intelligenza artificiale per negozi e attività locali.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Prodotto</h4>
+                <a href="./index.html#features">Funzionalità</a>
+                <a href="./index.html#pricing">Prezzi</a>
+                <a href="./index.html#demo">Demo</a>
+                <a href="./changelog.html">Changelog</a>
+            </div>
+            <div class="footer-col">
+                <h4>Risorse</h4>
+                <a href="./docs.html">Documentazione</a>
+                <a href="./docs.html">Guide</a>
+                <a href="./api.html">API Reference</a>
+                <a href="./blog.html">Blog</a>
+            </div>
+            <div class="footer-col">
+                <h4>Azienda</h4>
+                <a href="./chi-siamo.html">Chi siamo</a>
+                <a href="./contatti.html">Contatti</a>
+                <a href="./privacy.html">Privacy</a>
+                <a href="./terms.html">Termini</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 FideliAI. Tutti i diritti riservati.
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            document.getElementById('landing-nav').classList.toggle('scrolled', window.scrollY > 50);
+        });
+    </script>
+
+</body>
+</html>

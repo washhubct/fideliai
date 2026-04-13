@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contatti — FideliAI</title>
+    <meta name="description" content="Contatta il team di FideliAI. Siamo qui per aiutarti con qualsiasi domanda sulla piattaforma loyalty e CRM.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💎</text></svg>">
+    <style>
+        .legal-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 120px 24px 80px;
+        }
+        .legal-content h1 {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+        .legal-content .last-updated {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 48px;
+        }
+        .legal-content h2 {
+            font-size: 1.4rem;
+            margin-top: 40px;
+            margin-bottom: 16px;
+        }
+        .legal-content h3 {
+            font-size: 1.1rem;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+        .legal-content p,
+        .legal-content li {
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+        .legal-content ul {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+        .legal-content ul li {
+            margin-bottom: 6px;
+        }
+        .legal-content a {
+            color: var(--primary);
+        }
+        .contact-form {
+            margin-top: 32px;
+        }
+        .contact-form label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            margin-top: 20px;
+            color: var(--text-primary);
+        }
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            border-color: var(--primary);
+        }
+        .contact-form textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .contact-form button {
+            margin-top: 24px;
+            padding: 14px 32px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .contact-form button:hover {
+            opacity: 0.9;
+        }
+        .contact-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 24px;
+        }
+        .contact-info-card {
+            padding: 24px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .contact-info-card h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+        @media (max-width: 600px) {
+            .contact-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="landing-nav" id="landing-nav">
+        <div class="nav-logo">
+            <div class="logo-icon">💎</div>
+            FideliAI
+        </div>
+        <div class="nav-links">
+            <a href="./index.html">Torna alla home</a>
+        </div>
+    </nav>
+
+    <!-- Contatti Content -->
+    <div class="legal-content">
+        <h1>Contatti</h1>
+        <p class="last-updated">Siamo qui per aiutarti</p>
+
+        <p>Hai domande su FideliAI, hai bisogno di assistenza o vuoi semplicemente saperne di pi&ugrave;? Non esitare a contattarci. Il nostro team &egrave; sempre disponibile per ascoltarti.</p>
+
+        <div class="contact-info-grid">
+            <div class="contact-info-card">
+                <h3>Informazioni generali</h3>
+                <p><a href="mailto:info@fidelai.it">info@fidelai.it</a></p>
+                <p>Per domande commerciali, partnership e richieste generali.</p>
+            </div>
+            <div class="contact-info-card">
+                <h3>Supporto tecnico</h3>
+                <p><a href="mailto:supporto@fidelai.it">supporto@fidelai.it</a></p>
+                <p>Per assistenza tecnica, problemi con la piattaforma e richieste di aiuto.</p>
+            </div>
+        </div>
+
+        <h2>Sede</h2>
+        <p>
+            <strong>FideliAI S.r.l.</strong><br>
+            Milano, Italia
+        </p>
+
+        <h2>Seguici</h2>
+        <p>
+            <a href="#">LinkedIn</a> &middot;
+            <a href="#">Instagram</a> &middot;
+            <a href="#">Facebook</a> &middot;
+            <a href="#">X (Twitter)</a>
+        </p>
+
+        <h2>Scrivici</h2>
+        <p>Compila il modulo qui sotto e ti risponderemo il prima possibile.</p>
+
+        <form class="contact-form" onsubmit="event.preventDefault(); alert('Grazie per il tuo messaggio! Ti risponderemo al pi&ugrave; presto.');">
+            <label for="contact-name">Nome e cognome</label>
+            <input type="text" id="contact-name" name="name" placeholder="Il tuo nome" required>
+
+            <label for="contact-email">Email</label>
+            <input type="email" id="contact-email" name="email" placeholder="La tua email" required>
+
+            <label for="contact-message">Messaggio</label>
+            <textarea id="contact-message" name="message" placeholder="Come possiamo aiutarti?" required></textarea>
+
+            <button type="submit">Invia messaggio</button>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="nav-logo">
+                    <div class="logo-icon">💎</div>
+                    FideliAI
+                </div>
+                <p>La piattaforma loyalty e CRM con intelligenza artificiale per negozi e attività locali.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Prodotto</h4>
+                <a href="./index.html#features">Funzionalità</a>
+                <a href="./index.html#pricing">Prezzi</a>
+                <a href="./index.html#demo">Demo</a>
+                <a href="./changelog.html">Changelog</a>
+            </div>
+            <div class="footer-col">
+                <h4>Risorse</h4>
+                <a href="./docs.html">Documentazione</a>
+                <a href="./docs.html">Guide</a>
+                <a href="./api.html">API Reference</a>
+                <a href="./blog.html">Blog</a>
+            </div>
+            <div class="footer-col">
+                <h4>Azienda</h4>
+                <a href="./chi-siamo.html">Chi siamo</a>
+                <a href="./contatti.html">Contatti</a>
+                <a href="./privacy.html">Privacy</a>
+                <a href="./terms.html">Termini</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 FideliAI. Tutti i diritti riservati.
+        </div>
+    </footer>
+
+    <script>
+        window.addEventListener('scroll', () => {
+            document.getElementById('landing-nav').classList.toggle('scrolled', window.scrollY > 50);
+        });
+    </script>
+
+</body>
+</html>
