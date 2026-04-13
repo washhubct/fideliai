@@ -46,6 +46,10 @@ export function navigateTo(moduleId) {
         topTitle.textContent = modules[moduleId].title;
     }
 
+    // Show/hide transaction button (only on home)
+    const transBtn = document.getElementById('btn-add-transaction');
+    if (transBtn) transBtn.style.display = moduleId === 'home' ? '' : 'none';
+
     // Close mobile sidebar
     document.querySelector('.sidebar')?.classList.remove('open');
 
