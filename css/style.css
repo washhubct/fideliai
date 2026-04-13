@@ -1437,19 +1437,19 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
     /* Panels mobile */
     .panel-header {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-wrap: wrap;
         gap: 12px;
         padding: 16px;
     }
-    .panel-header .btn { width: 100%; text-align: center; }
+    .panel-header h3 { flex: 1; min-width: 0; }
+    .panel-header .btn { flex-shrink: 0; }
     .panel-body { padding: 16px; }
 
     /* Feature cards / reward cards mobile */
-    .feature-card { padding: 20px; }
-    .flex-between {
-        flex-direction: column;
-        align-items: flex-start;
+    .feature-card { padding: 16px; word-break: break-word; }
+    .feature-card .flex-between {
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 8px;
     }
 
