@@ -469,17 +469,17 @@ Solo il JSON, niente altro.`;
 // Mappa piani ai Stripe Price ID (creare nella Stripe Dashboard)
 const PLAN_PRICES = {
     starter: {
-        priceId: "price_starter_monthly",
+        priceId: "price_1TLlnfDlEsN4rSPaYjUq1qZz",
         name: "Starter",
         amount: 1900, // centesimi
     },
     pro: {
-        priceId: "price_pro_monthly",
+        priceId: "price_1TLlo0DlEsN4rSPaBDP0TNLB",
         name: "Pro",
         amount: 3900,
     },
     business: {
-        priceId: "price_business_monthly",
+        priceId: "price_1TLloNDlEsN4rSPagvqjbM94",
         name: "Business",
         amount: 6900,
     },
