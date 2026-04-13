@@ -797,6 +797,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 .main-content {
     margin-left: var(--sidebar-width);
     padding: 32px;
+    overflow-x: hidden;
     min-height: 100vh;
 }
 
@@ -899,9 +900,13 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     font-size: 17px;
     font-weight: 700;
     color: var(--dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
-.panel-body { padding: 24px; }
+.panel-body { padding: 24px; overflow: hidden; }
 
 /* Tables */
 .table-container { overflow-x: auto; }
@@ -1007,12 +1012,15 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     display: flex;
     flex-direction: column;
     gap: 16px;
+    width: 100%;
+    overflow: hidden;
 }
 
 .ai-message {
     display: flex;
     gap: 12px;
     align-items: flex-start;
+    width: 100%;
     min-width: 0;
 }
 
@@ -1035,6 +1043,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     padding: 16px;
     max-width: 85%;
     min-width: 0;
+    flex: 1;
     font-size: 14px;
     line-height: 1.7;
     color: var(--gray-700);
@@ -1455,9 +1464,9 @@ textarea.form-control { resize: vertical; min-height: 80px; }
         gap: 12px;
         padding: 16px;
     }
-    .panel-header h3 { flex: 1; min-width: 0; }
+    .panel-header h3 { flex: 1; min-width: 0; white-space: normal; overflow: visible; text-overflow: clip; }
     .panel-header .btn { flex-shrink: 0; }
-    .panel-body { padding: 16px; }
+    .panel-body { padding: 16px; overflow: hidden; }
 
     /* Feature cards / reward cards mobile */
     .feature-card { padding: 16px; word-break: break-word; }
