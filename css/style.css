@@ -679,8 +679,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
 /* Dashboard Layout */
 .dashboard-layout {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
     min-height: 100vh;
 }
 
@@ -798,7 +796,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     margin-left: var(--sidebar-width);
     padding: 32px;
     min-height: 100vh;
-    min-width: 0;
 }
 
 .topbar {
@@ -1014,8 +1011,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     display: flex;
     gap: 12px;
     align-items: flex-start;
-    width: 100%;
-    min-width: 0;
 }
 
 .ai-avatar {
@@ -1035,14 +1030,10 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     background: var(--gray-50);
     border-radius: 12px 12px 12px 4px;
     padding: 16px;
-    max-width: 85%;
-    min-width: 0;
-    flex: 1;
+    max-width: 80%;
     font-size: 14px;
     line-height: 1.7;
     color: var(--gray-700);
-    word-wrap: break-word;
-    overflow-wrap: break-word;
 }
 
 .ai-bubble strong { color: var(--dark); }
@@ -1426,7 +1417,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     .features-grid { grid-template-columns: 1fr; }
     .footer-content { grid-template-columns: 1fr; }
 
-    .dashboard-layout { grid-template-columns: 1fr; }
+    /* dashboard-layout is no longer grid, just needs mobile overrides */
     .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s;
