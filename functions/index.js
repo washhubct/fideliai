@@ -516,7 +516,7 @@ exports.createCheckoutSession = onCall(
 
         const stripe = new (getStripe())(stripeSecretKey.value());
 
-        const baseUrl = "https://fideliai-app.web.app";
+        const baseUrl = "https://fidelai.it";
 
         try {
             const session = await stripe.checkout.sessions.create({
