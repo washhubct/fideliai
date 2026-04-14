@@ -144,7 +144,7 @@ async function sendCampaign(campaignId) {
 
     try {
         // Prova a chiamare la Cloud Function
-        const sendCampaignFn = firebase.functions('europe-west1').httpsCallable('sendCampaign');
+        const sendCampaignFn = firebase.app().functions('europe-west1').httpsCallable('sendCampaign');
         const result = await sendCampaignFn({ campaignId });
 
         showToast(`Campagna inviata a ${result.data.sent} clienti!`);

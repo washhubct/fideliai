@@ -392,7 +392,7 @@ async function callAi(message) {
 
     try {
         // Chiama Firebase Cloud Function
-        const aiChat = firebase.functions('europe-west1').httpsCallable('aiChat');
+        const aiChat = firebase.app().functions('europe-west1').httpsCallable('aiChat');
         const result = await aiChat({
             message,
             context: {
