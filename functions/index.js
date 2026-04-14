@@ -92,6 +92,7 @@ exports.aiChat = onCall(
         secrets: [anthropicApiKey],
         region: "europe-west1",
         maxInstances: 10,
+        cors: [/fidelai\.it$/, /fideliai-app\.web\.app$/, /fideliai-app\.firebaseapp\.com$/],
     },
     async (request) => {
         // Auth check
@@ -263,6 +264,7 @@ exports.sendCampaign = onCall(
     {
         region: "europe-west1",
         maxInstances: 5,
+        cors: [/fidelai\.it$/, /fideliai-app\.web\.app$/, /fideliai-app\.firebaseapp\.com$/],
     },
     async (request) => {
         if (!request.auth) {
@@ -368,6 +370,7 @@ exports.aiInsights = onCall(
         secrets: [anthropicApiKey],
         region: "europe-west1",
         maxInstances: 5,
+        cors: [/fidelai\.it$/, /fideliai-app\.web\.app$/, /fideliai-app\.firebaseapp\.com$/],
     },
     async (request) => {
         if (!request.auth) {
@@ -495,6 +498,7 @@ exports.createCheckoutSession = onCall(
         secrets: [stripeSecretKey],
         region: "europe-west1",
         maxInstances: 10,
+        cors: [/fidelai\.it$/, /fideliai-app\.web\.app$/, /fideliai-app\.firebaseapp\.com$/],
     },
     async (request) => {
         if (!request.auth) {
