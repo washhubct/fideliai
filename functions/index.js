@@ -1,4 +1,7 @@
-const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
+// v1 for callable functions (no Cloud Run IAM issues)
+const functionsV1 = require("firebase-functions/v1");
+// v2 for triggers and scheduled functions
+const { onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
@@ -84,47 +87,22 @@ ${bodyHtml}
 </html>`;
 }
 
-// Helper: verify Firebase Auth token from request
-async function verifyAuth(req) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return null;
-    }
-    try {
-        const token = authHeader.split("Bearer ")[1];
-        return await getAdmin().auth().verifyIdToken(token);
-    } catch {
-        return null;
-    }
-}
-
-// Helper: send JSON response for onRequest handlers
-function sendJson(res, data) {
-    res.status(200).json({ result: data });
-}
-function sendError(res, code, message) {
-    const httpCode = code === "unauthenticated" ? 401 : code === "not-found" ? 404 : 400;
-    res.status(httpCode).json({ error: { code, message } });
-}
-
 // Rate limit: max queries per merchant per day
 const DAILY_LIMIT = 30;
 
-exports.aiChat = onRequest(
-    {
-        secrets: [anthropicApiKey],
-        region: "europe-west1",
-        maxInstances: 10,
-    },
-    async (req, res) => {
-        const user = await verifyAuth(req);
-        if (!user) { sendError(res, "unauthenticated", "Devi essere autenticato."); return; }
+exports.aiChat = functionsV1
+    .region("europe-west1")
+    .runWith({ secrets: ["ANTHROPIC_API_KEY"], maxInstances: 10 })
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functionsV1.https.HttpsError("unauthenticated", "Devi essere autenticato.");
+        }
 
-        const merchantId = user.uid;
-        const { message, context } = req.body.data || {};
+        const merchantId = context.auth.uid;
+        const { message } = data || {};
 
         if (!message || typeof message !== "string" || message.length > 500) {
-            sendError(res, "invalid-argument", "Messaggio non valido."); return;
+            throw new functionsV1.https.HttpsError("invalid-argument", "Messaggio non valido.");
         }
 
         const db = getDb();
@@ -136,8 +114,7 @@ exports.aiChat = onRequest(
         const currentCount = rateLimitDoc.exists ? rateLimitDoc.data().count : 0;
 
         if (currentCount >= DAILY_LIMIT) {
-            sendError(res, "resource-exhausted", `Hai raggiunto il limite di ${DAILY_LIMIT} domande al giorno. Riprova domani.`);
-            return;
+            throw new functionsV1.https.HttpsError("resource-exhausted", `Hai raggiunto il limite di ${DAILY_LIMIT} domande al giorno. Riprova domani.`);
         }
 
         // Build merchant context from Firestore
@@ -237,7 +214,7 @@ REGOLE:
 - Non inventare dati che non hai`;
 
         // Call Claude Haiku
-        const client = new (getAnthropic())({ apiKey: anthropicApiKey.value() });
+        const client = new (getAnthropic())({ apiKey: process.env.ANTHROPIC_API_KEY });
 
         const response = await client.messages.create({
             model: "claude-haiku-4-5-20251001",
@@ -271,29 +248,27 @@ REGOLE:
             createdAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
-        sendJson(res, {
+        return {
             response: aiResponse,
             tokensUsed: inputTokens + outputTokens,
             queriesRemaining: DAILY_LIMIT - currentCount - 1,
-        });
-    }
-);
+        };
+    });
 
 // Send campaign to targeted customers
-exports.sendCampaign = onRequest(
-    {
-        region: "europe-west1",
-        maxInstances: 5,
-    },
-    async (req, res) => {
-        const user = await verifyAuth(req);
-        if (!user) { sendError(res, "unauthenticated", "Devi essere autenticato."); return; }
+exports.sendCampaign = functionsV1
+    .region("europe-west1")
+    .runWith({ maxInstances: 5 })
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functionsV1.https.HttpsError("unauthenticated", "Devi essere autenticato.");
+        }
 
-        const merchantId = user.uid;
-        const { campaignId } = req.body.data || {};
+        const merchantId = context.auth.uid;
+        const { campaignId } = data || {};
 
         if (!campaignId || typeof campaignId !== "string") {
-            sendError(res, "invalid-argument", "campaignId non valido."); return;
+            throw new functionsV1.https.HttpsError("invalid-argument", "campaignId non valido.");
         }
 
         const db = getDb();
@@ -303,13 +278,13 @@ exports.sendCampaign = onRequest(
         const campaignDoc = await campaignRef.get();
 
         if (!campaignDoc.exists) {
-            sendError(res, "not-found", "Campagna non trovata."); return;
+            throw new functionsV1.https.HttpsError("not-found", "Campagna non trovata.");
         }
 
         const campaign = campaignDoc.data();
 
         if (campaign.status === "completed") {
-            sendError(res, "failed-precondition", "Campagna già completata."); return;
+            throw new functionsV1.https.HttpsError("failed-precondition", "Campagna già completata.");
         }
 
         // Update status to active
@@ -380,22 +355,19 @@ exports.sendCampaign = onRequest(
             completedAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
-        sendJson(res, { sent: sentCount, status: "completed" });
-    }
-);
+        return { sent: sentCount, status: "completed" };
+    });
 
 // Auto-generate insights
-exports.aiInsights = onRequest(
-    {
-        secrets: [anthropicApiKey],
-        region: "europe-west1",
-        maxInstances: 5,
-    },
-    async (req, res) => {
-        const user = await verifyAuth(req);
-        if (!user) { sendError(res, "unauthenticated", "Devi essere autenticato."); return; }
+exports.aiInsights = functionsV1
+    .region("europe-west1")
+    .runWith({ secrets: ["ANTHROPIC_API_KEY"], maxInstances: 5 })
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functionsV1.https.HttpsError("unauthenticated", "Devi essere autenticato.");
+        }
 
-        const merchantId = user.uid;
+        const merchantId = context.auth.uid;
         const db = getDb();
 
         // Check cache (insights cached for 6 hours)
@@ -406,7 +378,7 @@ exports.aiInsights = onRequest(
             const cachedAt = cacheDoc.data().cachedAt?.toDate();
             const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
             if (cachedAt && cachedAt > sixHoursAgo) {
-                sendJson(res, { insights: cacheDoc.data().insights, cached: true }); return;
+                return { insights: cacheDoc.data().insights, cached: true };
             }
         }
 
@@ -455,7 +427,7 @@ Rispondi in JSON array con esattamente 3 oggetti:
 
 Solo il JSON, niente altro.`;
 
-        const client = new (getAnthropic())({ apiKey: anthropicApiKey.value() });
+        const client = new (getAnthropic())({ apiKey: process.env.ANTHROPIC_API_KEY });
 
         const response = await client.messages.create({
             model: "claude-haiku-4-5-20251001",
@@ -482,9 +454,8 @@ Solo il JSON, niente altro.`;
             cachedAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
-        sendJson(res, { insights, cached: false });
-    }
-);
+        return { insights, cached: false };
+    });
 
 // ========== STRIPE PAYMENT INTEGRATION ==========
 
@@ -512,28 +483,25 @@ const PLAN_PRICES = {
  * Il client invia { planId: 'starter' | 'pro' | 'business' }.
  * Ritorna l'URL della sessione Checkout.
  */
-exports.createCheckoutSession = onRequest(
-    {
-        secrets: [stripeSecretKey],
-        region: "europe-west1",
-        maxInstances: 10,
-    },
-    async (req, res) => {
-        const user = await verifyAuth(req);
-        if (!user) { sendError(res, "unauthenticated", "Devi essere autenticato."); return; }
+exports.createCheckoutSession = functionsV1
+    .region("europe-west1")
+    .runWith({ secrets: ["STRIPE_SECRET_KEY"], maxInstances: 10 })
+    .https.onCall(async (data, context) => {
+        if (!context.auth) {
+            throw new functionsV1.https.HttpsError("unauthenticated", "Devi essere autenticato.");
+        }
 
-        const { planId } = req.body.data || {};
+        const { planId } = data || {};
         const plan = PLAN_PRICES[planId];
 
         if (!plan) {
-            sendError(res, "invalid-argument", "Piano non valido. Scegli tra: starter, pro, business.");
-            return;
+            throw new functionsV1.https.HttpsError("invalid-argument", "Piano non valido. Scegli tra: starter, pro, business.");
         }
 
-        const merchantId = user.uid;
-        const customerEmail = user.email;
+        const merchantId = context.auth.uid;
+        const customerEmail = context.auth.token.email;
 
-        const stripe = new (getStripe())(stripeSecretKey.value());
+        const stripe = new (getStripe())(process.env.STRIPE_SECRET_KEY);
 
         const baseUrl = "https://fidelai.it";
 
@@ -563,13 +531,12 @@ exports.createCheckoutSession = onRequest(
                 },
             });
 
-            sendJson(res, { url: session.url });
+            return { url: session.url };
         } catch (error) {
             console.error("Errore creazione Checkout Session:", error);
-            sendError(res, "internal", "Errore nella creazione della sessione di pagamento.");
+            throw new functionsV1.https.HttpsError("internal", "Errore nella creazione della sessione di pagamento.");
         }
-    }
-);
+    });
 
 /**
  * Webhook Stripe per gestire eventi di pagamento.

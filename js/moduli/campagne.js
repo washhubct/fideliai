@@ -1,5 +1,5 @@
 // FideliAI — Campagne Module
-import { db, auth, firebase } from '../firebase-config.js';
+import { db, firebase } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast, formatDate, formatNumber } from '../utils.js';
 
@@ -143,17 +143,10 @@ async function sendCampaign(campaignId) {
     }
 
     try {
-        const token = await auth.currentUser.getIdToken();
-        const resp = await fetch('/api/sendCampaign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ data: { campaignId } })
-        });
-        const result = await resp.json();
+        const sendCampaignFn = firebase.app().functions('europe-west1').httpsCallable('sendCampaign');
+        const result = await sendCampaignFn({ campaignId });
 
-        if (result.error) throw new Error(result.error.message);
-
-        showToast(`Campagna inviata a ${result.result.sent} clienti!`);
+        showToast(`Campagna inviata a ${result.data.sent} clienti!`);
         loadCampaigns();
     } catch (error) {
         console.warn('Cloud Function non disponibile, simulazione locale:', error.message);

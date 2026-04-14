@@ -1,6 +1,6 @@
 // FideliAI — AI Agent Module (Enhanced + Cloud AI)
 import state from '../state.js';
-import { auth } from '../firebase-config.js';
+import { firebase } from '../firebase-config.js';
 import { formatNumber, formatCurrency, showToast } from '../utils.js';
 import { navigateTo } from './navigazione.js';
 
@@ -392,34 +392,28 @@ async function callAi(message) {
     }
 
     try {
-        const token = await auth.currentUser.getIdToken();
-        const resp = await fetch('/api/aiChat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ data: { message, context: {
+        const aiChat = firebase.app().functions('europe-west1').httpsCallable('aiChat');
+        const result = await aiChat({
+            message,
+            context: {
                 customersCount: (state.customers || []).length,
                 transactionsCount: (state.transactions || []).length
-            }}})
-        });
-        const result = await resp.json();
-
-        if (result.error) {
-            if (result.error.code === 'resource-exhausted') {
-                return { html: `⚠️ ${result.error.message}`, source: 'cloud', remaining: 0 };
             }
-            throw new Error(result.error.message);
-        }
+        });
 
         cloudAiAvailable = true;
         return {
-            html: escapeHtml(result.result.response).replace(/\n/g, '<br>'),
+            html: escapeHtml(result.data.response).replace(/\n/g, '<br>'),
             source: 'cloud',
-            remaining: result.result.queriesRemaining
+            remaining: result.data.queriesRemaining
         };
     } catch (error) {
         if (cloudAiAvailable === null) {
             cloudAiAvailable = false;
             console.log('Cloud AI non disponibile, uso analisi locale:', error.message);
+        }
+        if (error.code === 'resource-exhausted') {
+            return { html: `⚠️ ${error.message}`, source: 'cloud', remaining: 0 };
         }
         return { html: getAiResponse(message), source: 'local' };
     }

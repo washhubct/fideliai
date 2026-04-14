@@ -11,34 +11,6 @@
         ],
         "rewrites": [
             {
-                "source": "/api/createCheckoutSession",
-                "function": {
-                    "functionId": "createCheckoutSession",
-                    "region": "europe-west1"
-                }
-            },
-            {
-                "source": "/api/aiChat",
-                "function": {
-                    "functionId": "aiChat",
-                    "region": "europe-west1"
-                }
-            },
-            {
-                "source": "/api/aiInsights",
-                "function": {
-                    "functionId": "aiInsights",
-                    "region": "europe-west1"
-                }
-            },
-            {
-                "source": "/api/sendCampaign",
-                "function": {
-                    "functionId": "sendCampaign",
-                    "region": "europe-west1"
-                }
-            },
-            {
                 "source": "**",
                 "destination": "/index.html"
             }
