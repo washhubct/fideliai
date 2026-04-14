@@ -84,28 +84,50 @@ ${bodyHtml}
 </html>`;
 }
 
+// Helper: verify Firebase Auth token from request
+async function verifyAuth(req) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return null;
+    }
+    try {
+        const token = authHeader.split("Bearer ")[1];
+        return await getAdmin().auth().verifyIdToken(token);
+    } catch {
+        return null;
+    }
+}
+
+// Helper: send JSON response for onRequest handlers
+function sendJson(res, data) {
+    res.status(200).json({ result: data });
+}
+function sendError(res, code, message) {
+    const httpCode = code === "unauthenticated" ? 401 : code === "not-found" ? 404 : 400;
+    res.status(httpCode).json({ error: { code, message } });
+}
+
 // Rate limit: max queries per merchant per day
 const DAILY_LIMIT = 30;
 
-exports.aiChat = onCall(
+exports.aiChat = onRequest(
     {
         secrets: [anthropicApiKey],
         region: "europe-west1",
         maxInstances: 10,
-        cors: true,
     },
-    async (request) => {
-        // Auth check
-        if (!request.auth) {
-            throw new HttpsError("unauthenticated", "Devi essere autenticato.");
-        }
+    async (req, res) => {
+        const user = await verifyAuth(req);
+        if (!user) { sendError(res, "unauthenticated", "Devi essere autenticato."); return; }
 
-        const merchantId = request.auth.uid;
-        const { message, context } = request.data;
+        const merchantId = user.uid;
+        const { message, context } = req.body.data || {};
 
         if (!message || typeof message !== "string" || message.length > 500) {
-            throw new HttpsError("invalid-argument", "Messaggio non valido.");
+            sendError(res, "invalid-argument", "Messaggio non valido."); return;
         }
+
+        const db = getDb();
 
         // Rate limiting
         const today = new Date().toISOString().split("T")[0];
@@ -114,10 +136,8 @@ exports.aiChat = onCall(
         const currentCount = rateLimitDoc.exists ? rateLimitDoc.data().count : 0;
 
         if (currentCount >= DAILY_LIMIT) {
-            throw new HttpsError(
-                "resource-exhausted",
-                `Hai raggiunto il limite di ${DAILY_LIMIT} domande al giorno. Riprova domani.`
-            );
+            sendError(res, "resource-exhausted", `Hai raggiunto il limite di ${DAILY_LIMIT} domande al giorno. Riprova domani.`);
+            return;
         }
 
         // Build merchant context from Firestore
@@ -251,45 +271,45 @@ REGOLE:
             createdAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
-        return {
+        sendJson(res, {
             response: aiResponse,
             tokensUsed: inputTokens + outputTokens,
             queriesRemaining: DAILY_LIMIT - currentCount - 1,
-        };
+        });
     }
 );
 
 // Send campaign to targeted customers
-exports.sendCampaign = onCall(
+exports.sendCampaign = onRequest(
     {
         region: "europe-west1",
         maxInstances: 5,
-        cors: true,
     },
-    async (request) => {
-        if (!request.auth) {
-            throw new HttpsError("unauthenticated", "Devi essere autenticato.");
-        }
+    async (req, res) => {
+        const user = await verifyAuth(req);
+        if (!user) { sendError(res, "unauthenticated", "Devi essere autenticato."); return; }
 
-        const merchantId = request.auth.uid;
-        const { campaignId } = request.data;
+        const merchantId = user.uid;
+        const { campaignId } = req.body.data || {};
 
         if (!campaignId || typeof campaignId !== "string") {
-            throw new HttpsError("invalid-argument", "campaignId non valido.");
+            sendError(res, "invalid-argument", "campaignId non valido."); return;
         }
+
+        const db = getDb();
 
         // Load campaign
         const campaignRef = db.doc(`merchants/${merchantId}/campaigns/${campaignId}`);
         const campaignDoc = await campaignRef.get();
 
         if (!campaignDoc.exists) {
-            throw new HttpsError("not-found", "Campagna non trovata.");
+            sendError(res, "not-found", "Campagna non trovata."); return;
         }
 
         const campaign = campaignDoc.data();
 
         if (campaign.status === "completed") {
-            throw new HttpsError("failed-precondition", "Campagna già completata.");
+            sendError(res, "failed-precondition", "Campagna già completata."); return;
         }
 
         // Update status to active
@@ -360,24 +380,23 @@ exports.sendCampaign = onCall(
             completedAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
-        return { sent: sentCount, status: "completed" };
+        sendJson(res, { sent: sentCount, status: "completed" });
     }
 );
 
-// Auto-generate insights (callable, not chat)
-exports.aiInsights = onCall(
+// Auto-generate insights
+exports.aiInsights = onRequest(
     {
         secrets: [anthropicApiKey],
         region: "europe-west1",
         maxInstances: 5,
-        cors: true,
     },
-    async (request) => {
-        if (!request.auth) {
-            throw new HttpsError("unauthenticated", "Devi essere autenticato.");
-        }
+    async (req, res) => {
+        const user = await verifyAuth(req);
+        if (!user) { sendError(res, "unauthenticated", "Devi essere autenticato."); return; }
 
-        const merchantId = request.auth.uid;
+        const merchantId = user.uid;
+        const db = getDb();
 
         // Check cache (insights cached for 6 hours)
         const cacheRef = db.doc(`insightsCache/${merchantId}`);
@@ -387,7 +406,7 @@ exports.aiInsights = onCall(
             const cachedAt = cacheDoc.data().cachedAt?.toDate();
             const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
             if (cachedAt && cachedAt > sixHoursAgo) {
-                return { insights: cacheDoc.data().insights, cached: true };
+                sendJson(res, { insights: cacheDoc.data().insights, cached: true }); return;
             }
         }
 
@@ -463,7 +482,7 @@ Solo il JSON, niente altro.`;
             cachedAt: getAdmin().firestore.FieldValue.serverTimestamp(),
         });
 
-        return { insights, cached: false };
+        sendJson(res, { insights, cached: false });
     }
 );
 
@@ -493,30 +512,26 @@ const PLAN_PRICES = {
  * Il client invia { planId: 'starter' | 'pro' | 'business' }.
  * Ritorna l'URL della sessione Checkout.
  */
-exports.createCheckoutSession = onCall(
+exports.createCheckoutSession = onRequest(
     {
         secrets: [stripeSecretKey],
         region: "europe-west1",
         maxInstances: 10,
-        cors: true,
     },
-    async (request) => {
-        if (!request.auth) {
-            throw new HttpsError("unauthenticated", "Devi essere autenticato.");
-        }
+    async (req, res) => {
+        const user = await verifyAuth(req);
+        if (!user) { sendError(res, "unauthenticated", "Devi essere autenticato."); return; }
 
-        const { planId } = request.data;
+        const { planId } = req.body.data || {};
         const plan = PLAN_PRICES[planId];
 
         if (!plan) {
-            throw new HttpsError(
-                "invalid-argument",
-                "Piano non valido. Scegli tra: starter, pro, business."
-            );
+            sendError(res, "invalid-argument", "Piano non valido. Scegli tra: starter, pro, business.");
+            return;
         }
 
-        const merchantId = request.auth.uid;
-        const customerEmail = request.auth.token.email;
+        const merchantId = user.uid;
+        const customerEmail = user.email;
 
         const stripe = new (getStripe())(stripeSecretKey.value());
 
@@ -548,13 +563,10 @@ exports.createCheckoutSession = onCall(
                 },
             });
 
-            return { url: session.url };
+            sendJson(res, { url: session.url });
         } catch (error) {
             console.error("Errore creazione Checkout Session:", error);
-            throw new HttpsError(
-                "internal",
-                "Errore nella creazione della sessione di pagamento."
-            );
+            sendError(res, "internal", "Errore nella creazione della sessione di pagamento.");
         }
     }
 );

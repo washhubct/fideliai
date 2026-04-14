@@ -1,5 +1,6 @@
 // FideliAI — AI Agent Module (Enhanced + Cloud AI)
 import state from '../state.js';
+import { auth } from '../firebase-config.js';
 import { formatNumber, formatCurrency, showToast } from '../utils.js';
 import { navigateTo } from './navigazione.js';
 
@@ -391,31 +392,34 @@ async function callAi(message) {
     }
 
     try {
-        // Chiama Firebase Cloud Function
-        const aiChat = firebase.app().functions('europe-west1').httpsCallable('aiChat');
-        const result = await aiChat({
-            message,
-            context: {
+        const token = await auth.currentUser.getIdToken();
+        const resp = await fetch('/api/aiChat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ data: { message, context: {
                 customersCount: (state.customers || []).length,
                 transactionsCount: (state.transactions || []).length
-            }
+            }}})
         });
+        const result = await resp.json();
+
+        if (result.error) {
+            if (result.error.code === 'resource-exhausted') {
+                return { html: `⚠️ ${result.error.message}`, source: 'cloud', remaining: 0 };
+            }
+            throw new Error(result.error.message);
+        }
 
         cloudAiAvailable = true;
         return {
-            html: escapeHtml(result.data.response).replace(/\n/g, '<br>'),
+            html: escapeHtml(result.result.response).replace(/\n/g, '<br>'),
             source: 'cloud',
-            remaining: result.data.queriesRemaining
+            remaining: result.result.queriesRemaining
         };
     } catch (error) {
-        // Se Cloud Function non disponibile (non deployata, no Blaze, ecc.)
         if (cloudAiAvailable === null) {
             cloudAiAvailable = false;
             console.log('Cloud AI non disponibile, uso analisi locale:', error.message);
-        }
-        // Rate limit reached
-        if (error.code === 'resource-exhausted') {
-            return { html: `⚠️ ${error.message}`, source: 'cloud', remaining: 0 };
         }
         return { html: getAiResponse(message), source: 'local' };
     }

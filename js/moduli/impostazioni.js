@@ -127,11 +127,16 @@ async function handleUpgrade(planId) {
     }
 
     try {
-        const createCheckoutSession = firebase.app().functions('europe-west1').httpsCallable('createCheckoutSession');
-        const result = await createCheckoutSession({ planId });
+        const token = await auth.currentUser.getIdToken();
+        const resp = await fetch('/api/createCheckoutSession', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ data: { planId } })
+        });
+        const result = await resp.json();
 
-        if (result.data && result.data.url) {
-            window.location.href = result.data.url;
+        if (result.result && result.result.url) {
+            window.location.href = result.result.url;
         } else {
             throw new Error('URL sessione non ricevuto');
         }
