@@ -18,6 +18,8 @@ export function initAuth() {
 
             const paymentStatus = params.get('payment');
 
+            const needsPayment = state.merchantData && !state.merchantData.stripeSubscriptionId;
+
             if (paymentStatus === 'success') {
                 // Ritorno da Stripe Checkout
                 showToast('Pagamento configurato! 14 giorni di prova gratuita attivati.');
@@ -26,8 +28,8 @@ export function initAuth() {
             } else if (hasPlan) {
                 // Arriva dalla landing con piano scelto → Stripe Checkout
                 checkAutoUpgrade();
-            } else if (isNewUser && !state.merchantData.stripeSubscriptionId) {
-                // Nuovo utente senza piano → mostra selezione piano
+            } else if (needsPayment) {
+                // Nessun abbonamento Stripe → mostra selezione piano
                 showPlanSelection();
             } else if (isNewUser) {
                 showOnboarding();
@@ -246,14 +248,21 @@ function showPlanSelection() {
             btn.disabled = true;
             btn.textContent = 'Caricamento...';
             try {
+                console.log('Chiamando createCheckoutSession con piano:', planId);
                 const createCheckoutSession = firebase.app().functions('europe-west1').httpsCallable('createCheckoutSession');
                 const result = await createCheckoutSession({ planId });
+                console.log('Risultato:', result);
                 if (result.data && result.data.url) {
                     window.location.href = result.data.url;
+                } else {
+                    console.error('Nessun URL nella risposta:', result);
+                    showToast('Errore: nessun URL di pagamento ricevuto.', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Inizia gratis';
                 }
             } catch (error) {
                 console.error('Errore checkout:', error);
-                showToast('Errore nel caricamento del pagamento. Riprova.', 'error');
+                showToast('Errore: ' + (error.message || 'Impossibile avviare il pagamento'), 'error');
                 btn.disabled = false;
                 btn.textContent = 'Inizia gratis';
             }
