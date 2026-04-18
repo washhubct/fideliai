@@ -1,4 +1,4 @@
-// FideliAI — Onboarding Wizard Module
+// FidelAI — Onboarding Wizard Module
 import { db } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast } from '../utils.js';

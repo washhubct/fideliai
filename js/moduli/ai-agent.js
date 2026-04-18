@@ -1,4 +1,4 @@
-// FideliAI — AI Agent Module (Enhanced + Cloud AI)
+// FidelAI — AI Agent Module (Enhanced + Cloud AI)
 import state from '../state.js';
 import { firebase } from '../firebase-config.js';
 import { formatNumber, formatCurrency, showToast } from '../utils.js';

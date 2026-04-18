@@ -1,4 +1,4 @@
-// FideliAI — Transazioni Module
+// FidelAI — Transazioni Module
 import { db } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast, formatCurrency } from '../utils.js';

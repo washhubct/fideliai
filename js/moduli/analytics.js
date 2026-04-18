@@ -1,4 +1,4 @@
-// FideliAI — Analytics Module
+// FidelAI — Analytics Module
 import { db } from '../firebase-config.js';
 import state from '../state.js';
 import { formatNumber, formatCurrency } from '../utils.js';

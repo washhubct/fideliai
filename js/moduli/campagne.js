@@ -1,4 +1,4 @@
-// FideliAI — Campagne Module
+// FidelAI — Campagne Module
 import { db, firebase } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast, formatDate, formatNumber } from '../utils.js';

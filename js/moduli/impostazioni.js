@@ -1,4 +1,4 @@
-// FideliAI — Impostazioni Module
+// FidelAI — Impostazioni Module
 import { db, auth, firebase } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast } from '../utils.js';

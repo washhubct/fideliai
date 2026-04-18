@@ -1,4 +1,4 @@
-// FideliAI — Authentication Module
+// FidelAI — Authentication Module
 import { auth, db, firebase } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast } from '../utils.js';

@@ -1,6 +1,6 @@
 {
     "name": "fideliai-functions",
-    "description": "FideliAI Cloud Functions — AI Agent proxy",
+    "description": "FidelAI Cloud Functions — AI Agent proxy",
     "scripts": {
         "serve": "firebase emulators:start --only functions",
         "deploy": "firebase deploy --only functions"

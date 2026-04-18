@@ -1,4 +1,4 @@
-// FideliAI — Navigation Module
+// FidelAI — Navigation Module
 import state from '../state.js';
 
 const modules = {

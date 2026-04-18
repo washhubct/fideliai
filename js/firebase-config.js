@@ -1,4 +1,4 @@
-// FideliAI — Firebase Configuration
+// FidelAI — Firebase Configuration
 // Replace with your Firebase project credentials
 
 const firebaseConfig = {

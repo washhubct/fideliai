@@ -1,6 +1,6 @@
 {
-    "name": "FideliAI — Card Fedeltà",
-    "short_name": "FideliAI",
+    "name": "FidelAI — Card Fedeltà",
+    "short_name": "FidelAI",
     "description": "La tua card fedeltà digitale",
     "start_url": "/card.html",
     "display": "standalone",

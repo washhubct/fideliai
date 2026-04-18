@@ -1,4 +1,4 @@
-// FideliAI — Utility Functions
+// FidelAI — Utility Functions
 
 export function formatDate(date) {
     if (!date) return '-';

@@ -1,4 +1,4 @@
-// FideliAI — Clienti / CRM Module
+// FidelAI — Clienti / CRM Module
 import { db } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast, formatDate, formatNumber, debounce } from '../utils.js';
@@ -184,7 +184,7 @@ export function exportCSV() {
     const today = new Date().toISOString().slice(0, 10);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `clienti_fideliai_${today}.csv`;
+    a.download = `clienti_fidelai_${today}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -43,7 +43,7 @@ function createMailTransporter() {
 }
 
 /**
- * Wraps email body content in the standard FideliAI HTML template.
+ * Wraps email body content in the standard FidelAI HTML template.
  */
 function emailTemplate(title, bodyHtml) {
     return `<!DOCTYPE html>
@@ -73,10 +73,10 @@ ${bodyHtml}
 <!-- Footer -->
 <tr>
 <td style="padding:24px 40px;background-color:#f9fafb;text-align:center;border-top:1px solid #e5e7eb;">
-<p style="margin:0 0 8px;color:#9ca3af;font-size:12px;">FideliAI &mdash; La piattaforma di fidelizzazione intelligente</p>
+<p style="margin:0 0 8px;color:#9ca3af;font-size:12px;">FidelAI &mdash; La piattaforma di fidelizzazione intelligente</p>
 <p style="margin:0;color:#9ca3af;font-size:11px;">
-<a href="https://app.fideliai.app/settings/notifications" style="color:#6366F1;text-decoration:underline;">Gestisci preferenze email</a> &middot;
-<a href="https://app.fideliai.app/unsubscribe" style="color:#6366F1;text-decoration:underline;">Disiscriviti</a>
+<a href="https://app.fidelai.it/settings/notifications" style="color:#6366F1;text-decoration:underline;">Gestisci preferenze email</a> &middot;
+<a href="https://app.fidelai.it/unsubscribe" style="color:#6366F1;text-decoration:underline;">Disiscriviti</a>
 </p>
 </td>
 </tr>
@@ -99,9 +99,13 @@ exports.aiChat = functionsV1
         }
 
         const merchantId = context.auth.uid;
-        const { message } = data || {};
+        const { message: rawMessage } = data || {};
 
-        if (!message || typeof message !== "string" || message.length > 500) {
+        if (typeof rawMessage !== "string" || rawMessage.length > 500) {
+            throw new functionsV1.https.HttpsError("invalid-argument", "Messaggio non valido.");
+        }
+        const message = rawMessage.trim();
+        if (!message) {
             throw new functionsV1.https.HttpsError("invalid-argument", "Messaggio non valido.");
         }
 
@@ -181,7 +185,7 @@ exports.aiChat = functionsV1
                 ? Math.round((returningCustomers / totalCustomers) * 100)
                 : 0;
 
-        const systemPrompt = `Sei l'AI Agent di FideliAI, un assistente esperto in loyalty marketing e fidelizzazione clienti per negozi e attività locali italiane.
+        const systemPrompt = `Sei l'AI Agent di FidelAI, un assistente esperto in loyalty marketing e fidelizzazione clienti per negozi e attività locali italiane.
 
 RUOLO: Analizzi i dati del negozio e dai consigli concreti, azionabili e specifici per aumentare le visite ripetute, il valore medio dello scontrino e la retention dei clienti.
 
@@ -682,14 +686,14 @@ exports.onMerchantCreated = onDocumentCreated(
         }
 
         const businessName = merchant.businessName || "il tuo negozio";
-        const dashboardUrl = "https://app.fideliai.app/dashboard";
+        const dashboardUrl = "https://app.fidelai.it/dashboard";
 
         const bodyHtml = `
 <p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">
 Ciao <strong>${businessName}</strong>,
 </p>
 <p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
-Benvenuto su <strong>FideliAI</strong>! Siamo entusiasti di averti a bordo. La tua piattaforma di fidelizzazione intelligente &egrave; pronta per aiutarti a far crescere il tuo business.
+Benvenuto su <strong>FidelAI</strong>! Siamo entusiasti di averti a bordo. La tua piattaforma di fidelizzazione intelligente &egrave; pronta per aiutarti a far crescere il tuo business.
 </p>
 <h2 style="margin:0 0 16px;color:#1f2937;font-size:18px;font-weight:600;">Inizia subito in 3 passi:</h2>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
@@ -718,13 +722,13 @@ Benvenuto su <strong>FideliAI</strong>! Siamo entusiasti di averti a bordo. La t
 <a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;background-color:#6366F1;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;border-radius:8px;">Vai alla Dashboard</a>
 </div>`;
 
-        const html = emailTemplate("Benvenuto su FideliAI!", bodyHtml);
+        const html = emailTemplate("Benvenuto su FidelAI!", bodyHtml);
         const transporter = createMailTransporter();
 
         await transporter.sendMail({
-            from: "FideliAI <noreply@fideliai.app>",
+            from: "FidelAI <noreply@fidelai.it>",
             to: email,
-            subject: "Benvenuto su FideliAI! \uD83D\uDC8E",
+            subject: "Benvenuto su FidelAI! \uD83D\uDC8E",
             html,
         });
 
@@ -795,7 +799,7 @@ exports.weeklyReport = onSchedule(
             const newCustomers = newCustSnap.size;
 
             const businessName = merchant.businessName || "il tuo negozio";
-            const dashboardUrl = "https://app.fideliai.app/dashboard";
+            const dashboardUrl = "https://app.fidelai.it/dashboard";
 
             const kpiCard = (label, value, color) => `
 <td style="width:50%;padding:8px;">
@@ -829,7 +833,7 @@ ${kpiCard("Punti Emessi", pointsIssued.toLocaleString("it-IT"), "#ef4444")}
             const html = emailTemplate("Report Settimanale", bodyHtml);
 
             await transporter.sendMail({
-                from: "FideliAI <noreply@fideliai.app>",
+                from: "FidelAI <noreply@fidelai.it>",
                 to: email,
                 subject: `Report Settimanale \u2014 ${businessName}`,
                 html,
@@ -889,7 +893,7 @@ exports.inactiveCustomerAlert = onSchedule(
             const topThree = newlyInactive.slice(0, 3);
 
             const businessName = merchant.businessName || "il tuo negozio";
-            const dashboardUrl = "https://app.fideliai.app/dashboard/customers";
+            const dashboardUrl = "https://app.fidelai.it/dashboard/customers";
 
             const customerRows = topThree
                 .map((c) => {
@@ -937,7 +941,7 @@ ${moreText}
             const html = emailTemplate("Allarme Clienti Inattivi", bodyHtml);
 
             await transporter.sendMail({
-                from: "FideliAI <noreply@fideliai.app>",
+                from: "FidelAI <noreply@fidelai.it>",
                 to: email,
                 subject: `\u26A0\uFE0F ${count} client${count === 1 ? "e" : "i"} inattiv${count === 1 ? "o" : "i"} \u2014 ${businessName}`,
                 html,

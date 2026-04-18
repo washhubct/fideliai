@@ -1,4 +1,4 @@
-// FideliAI — Loyalty Engine Module
+// FidelAI — Loyalty Engine Module
 import { db } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast, formatNumber } from '../utils.js';

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fideliai-card-v1';
+const CACHE_NAME = 'fidelai-card-v2';
 
 const STATIC_ASSETS = [
   '/card.html',

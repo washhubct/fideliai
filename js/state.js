@@ -1,4 +1,4 @@
-// FideliAI — Application State
+// FidelAI — Application State
 
 const state = {
     currentUser: null,
