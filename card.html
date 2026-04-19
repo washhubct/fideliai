@@ -279,7 +279,21 @@
         }
 
         function renderDemo() {
-            document.getElementById('card-merchant-name').textContent = 'Bar Roma';
+            const brandDemo = params.get('brand') === 'custom';
+            if (brandDemo) {
+                applyBranding({
+                    plan: 'pro',
+                    businessName: 'Caffè Aurora',
+                    branding: {
+                        logoUrl: "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60"><rect width="120" height="60" rx="12" fill="#0F766E"/><text x="60" y="38" font-family="Inter,sans-serif" font-size="22" font-weight="800" fill="#FEF3C7" text-anchor="middle">AURORA</text></svg>'),
+                        primaryColor: '#0F766E',
+                        hideFidelaiBranding: true
+                    }
+                });
+                document.getElementById('card-merchant-name').textContent = 'Caffè Aurora';
+            } else {
+                document.getElementById('card-merchant-name').textContent = 'Bar Roma';
+            }
             document.getElementById('card-customer-name').textContent = 'Marco Rossi';
             document.getElementById('card-points').textContent = '1.250';
             document.getElementById('card-level').textContent = 'Silver ⭐';
