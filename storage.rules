@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Merchant branding (logo): merchant can read/write their own, public read for card.html
+    match /branding/{merchantId}/{file=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == merchantId
+        && request.resource.size < 1 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|svg\\+xml)');
+    }
+
+    // Deny everything else by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

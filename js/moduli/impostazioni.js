@@ -1,11 +1,16 @@
 // FidelAI — Impostazioni Module
-import { db, auth, firebase } from '../firebase-config.js';
+import { db, auth, firebase, storage } from '../firebase-config.js';
 import state from '../state.js';
 import { showToast } from '../utils.js';
+
+const WHITELABEL_PLANS = ['pro', 'business'];
+const DEFAULT_PRIMARY_COLOR = '#6366F1';
+const MAX_LOGO_BYTES = 1024 * 1024;
 
 export function initImpostazioni() {
     loadSettings();
     setupSettingsForms();
+    setupBrandingForm();
     checkUrlPaymentStatus();
 }
 
@@ -38,6 +43,137 @@ function loadSettings() {
 
     // Plan display con upgrade
     renderPlanSection(data);
+
+    // Branding white-label
+    renderBrandingSection(data);
+}
+
+function renderBrandingSection(data) {
+    const form = document.getElementById('branding-form');
+    const upsell = document.getElementById('branding-upsell');
+    if (!form || !upsell) return;
+
+    const planId = data.plan || 'starter';
+    const canUseWhitelabel = WHITELABEL_PLANS.includes(planId);
+
+    upsell.style.display = canUseWhitelabel ? 'none' : 'block';
+    form.querySelectorAll('input, button').forEach(el => {
+        el.disabled = !canUseWhitelabel;
+    });
+
+    const branding = data.branding || {};
+    const primary = branding.primaryColor || DEFAULT_PRIMARY_COLOR;
+    setVal('branding-primary-color', primary);
+    setVal('branding-primary-color-hex', primary);
+
+    const hideCheckbox = document.getElementById('branding-hide-fidelai');
+    if (hideCheckbox) hideCheckbox.checked = !!branding.hideFidelaiBranding;
+
+    updateLogoPreview(branding.logoUrl || '');
+}
+
+function updateLogoPreview(url) {
+    const img = document.getElementById('branding-logo-preview');
+    const empty = document.getElementById('branding-logo-empty');
+    const removeBtn = document.getElementById('branding-logo-remove');
+    if (!img || !empty || !removeBtn) return;
+    if (url) {
+        img.src = url;
+        img.style.display = 'block';
+        empty.style.display = 'none';
+        removeBtn.style.display = 'inline-block';
+    } else {
+        img.src = '';
+        img.style.display = 'none';
+        empty.style.display = 'inline';
+        removeBtn.style.display = 'none';
+    }
+}
+
+function setupBrandingForm() {
+    const form = document.getElementById('branding-form');
+    if (!form) return;
+
+    const colorInput = document.getElementById('branding-primary-color');
+    const hexInput = document.getElementById('branding-primary-color-hex');
+    if (colorInput && hexInput) {
+        colorInput.addEventListener('input', () => { hexInput.value = colorInput.value.toUpperCase(); });
+        hexInput.addEventListener('input', () => {
+            const v = hexInput.value.trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(v)) colorInput.value = v;
+        });
+    }
+
+    form.addEventListener('submit', saveBranding);
+
+    const removeBtn = document.getElementById('branding-logo-remove');
+    if (removeBtn) removeBtn.addEventListener('click', removeLogo);
+}
+
+async function saveBranding(e) {
+    e.preventDefault();
+    if (!state.merchantId) return;
+
+    const planId = state.merchantData?.plan || 'starter';
+    if (!WHITELABEL_PLANS.includes(planId)) {
+        showToast('White label disponibile sui piani Pro e Business.', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('branding-save-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio...'; }
+
+    try {
+        const fileInput = document.getElementById('branding-logo-file');
+        const file = fileInput?.files?.[0];
+
+        const existing = state.merchantData.branding || {};
+        let logoUrl = existing.logoUrl || '';
+
+        if (file) {
+            if (file.size > MAX_LOGO_BYTES) {
+                throw new Error('Il logo supera 1 MB.');
+            }
+            if (!storage) throw new Error('Storage non disponibile.');
+            const ref = storage.ref(`branding/${state.merchantId}/logo`);
+            const snapshot = await ref.put(file, { contentType: file.type });
+            logoUrl = await snapshot.ref.getDownloadURL();
+            fileInput.value = '';
+        }
+
+        const primaryColor = (document.getElementById('branding-primary-color-hex')?.value || DEFAULT_PRIMARY_COLOR).toUpperCase();
+        const hideFidelaiBranding = !!document.getElementById('branding-hide-fidelai')?.checked;
+
+        const branding = { logoUrl, primaryColor, hideFidelaiBranding };
+        await db.collection('merchants').doc(state.merchantId).update({ branding });
+        state.merchantData.branding = branding;
+
+        updateLogoPreview(logoUrl);
+        showToast('Personalizzazione salvata');
+    } catch (error) {
+        showToast('Errore: ' + error.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Salva personalizzazione'; }
+    }
+}
+
+async function removeLogo() {
+    if (!state.merchantId) return;
+    if (!confirm('Rimuovere il logo?')) return;
+
+    try {
+        if (storage) {
+            try { await storage.ref(`branding/${state.merchantId}/logo`).delete(); }
+            catch (err) { if (err.code !== 'storage/object-not-found') throw err; }
+        }
+        const branding = { ...(state.merchantData.branding || {}), logoUrl: '' };
+        await db.collection('merchants').doc(state.merchantId).update({ branding });
+        state.merchantData.branding = branding;
+        updateLogoPreview('');
+        showToast('Logo rimosso');
+    } catch (error) {
+        showToast('Errore: ' + error.message, 'error');
+    }
 }
 
 const PLANS = {

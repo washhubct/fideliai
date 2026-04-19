@@ -35,6 +35,7 @@
 
             <!-- Header -->
             <div class="card-header">
+                <img id="card-merchant-logo" src="" alt="" style="display:none;max-height:64px;max-width:180px;margin:0 auto 12px;border-radius:8px;background:#fff;padding:4px">
                 <p class="card-merchant" id="card-merchant-name">FidelAI</p>
                 <h1>La tua Card Fedeltà</h1>
             </div>
@@ -97,7 +98,7 @@
             </div>
 
             <!-- Powered by -->
-            <div style="text-align:center;padding:24px 0;opacity:0.4">
+            <div id="powered-by" style="text-align:center;padding:24px 0;opacity:0.4">
                 <p style="font-size:12px;color:white">Powered by FidelAI</p>
             </div>
 
@@ -144,6 +145,7 @@
             if (merchantDoc.exists) {
                 const m = merchantDoc.data();
                 document.getElementById('card-merchant-name').textContent = m.businessName || 'FidelAI';
+                applyBranding(m);
             }
 
             // Load customer
@@ -222,6 +224,44 @@
                     `;
                 });
             }
+        }
+
+        function applyBranding(merchant) {
+            const WHITELABEL_PLANS = ['pro', 'business'];
+            const plan = merchant.plan || 'starter';
+            const branding = merchant.branding || {};
+            if (!WHITELABEL_PLANS.includes(plan)) return;
+
+            if (branding.logoUrl) {
+                const img = document.getElementById('card-merchant-logo');
+                img.src = branding.logoUrl;
+                img.alt = merchant.businessName || '';
+                img.style.display = 'block';
+            }
+            if (branding.primaryColor && /^#[0-9a-fA-F]{6}$/.test(branding.primaryColor)) {
+                const primary = branding.primaryColor;
+                const dark = shadeColor(primary, -45);
+                const mid = shadeColor(primary, -25);
+                const app = document.querySelector('.card-app');
+                if (app) app.style.background = `linear-gradient(135deg, ${dark} 0%, ${mid} 50%, ${primary} 100%)`;
+                const meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute('content', dark);
+            }
+            if (branding.hideFidelaiBranding) {
+                const footer = document.getElementById('powered-by');
+                if (footer) footer.style.display = 'none';
+            }
+        }
+
+        function shadeColor(hex, percent) {
+            const n = parseInt(hex.slice(1), 16);
+            const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+            const p = percent / 100;
+            const adj = (c) => {
+                const v = p < 0 ? c * (1 + p) : c + (255 - c) * p;
+                return Math.max(0, Math.min(255, Math.round(v)));
+            };
+            return '#' + [adj(r), adj(g), adj(b)].map(x => x.toString(16).padStart(2, '0')).join('');
         }
 
         function getLevel(points) {
